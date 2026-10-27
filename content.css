@@ -1,0 +1,140 @@
+/* CrewBrain Plus */
+
+.cbp-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  align-items: center;
+  margin: 6px 0 10px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: #eef6f0;
+  color: #0b1f33;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.cbp-summary b { font-weight: 600; }
+.cbp-summary .cbp-gap {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 10px;
+  background: rgba(255, 170, 0, 0.28);
+  font-variant-numeric: tabular-nums;
+}
+.cbp-summary .cbp-ok { color: #1c7c45; }
+.cbp-summary .cbp-toggle {
+  margin-left: auto;
+  cursor: pointer;
+  color: #5b6b7a;
+  text-decoration: underline;
+}
+
+/* Zoom */
+.cbp-zoom {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+}
+.cbp-zbtn {
+  border: 1px solid #c9d3dc;
+  background: #fff;
+  color: #0b1f33;
+  border-radius: 4px;
+  padding: 1px 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.cbp-zbtn.cbp-on {
+  background: #0b1f33;
+  border-color: #0b1f33;
+  color: #fff;
+}
+.workinghours__content table .cbp-sticky {
+  position: sticky !important;
+  left: 0 !important;
+  z-index: 20 !important;
+  box-shadow: 1px 0 0 #d5dbe1;
+}
+.cbp-scroller {
+  overflow-x: auto;
+  scroll-behavior: auto;
+}
+
+/* Snap-Leiste im Bearbeiten-Dialog */
+.cbp-snap {
+  margin: 10px 0 4px;
+  text-align: left;
+  font-size: 12px;
+}
+.cbp-snap-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  margin-bottom: 5px;
+}
+.cbp-snap-label {
+  width: 42px;
+  color: #5b6b7a;
+}
+.cbp-chip {
+  border: 1px solid #c9d3dc;
+  background: #fff;
+  color: #0b1f33;
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+.cbp-chip:hover { border-color: #0b1f33; }
+.cbp-chip.cbp-fill {
+  background: #0b1f33;
+  color: #fff;
+  border-color: #0b1f33;
+}
+.cbp-chip small { color: #7a8794; margin-left: 3px; }
+.cbp-chip.cbp-fill small { color: #b9c6d2; }
+
+/* Aufgaben-Suche */
+.cbp-search {
+  margin: 0 0 8px;
+}
+.cbp-search input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 14px;
+  font-size: 16px;
+  border: 2px solid #0b1f33;
+  border-radius: 6px;
+  outline: none;
+}
+.cbp-search .cbp-hint {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #7a8794;
+}
+.cbp-recent {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+li.cbp-active > a {
+  background: #fde8ea;
+  border-radius: 4px;
+  outline: 2px solid #e8505b;
+}
+.cbp-hidden { display: none !important; }
+
+/* Heute-Button */
+.cbp-today {
+  margin-right: 8px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid #0b1f33;
+  background: #0b1f33;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
