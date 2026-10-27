@@ -439,7 +439,12 @@
         wrap.classList.add('cbp-hidden');
       }
       const inp = box.querySelector('input');
-      inp.addEventListener('input', () => { box.dataset.active = '0'; filterPicker(content, mode); });
+      inp.addEventListener('input', () => {
+        box.dataset.active = '0';
+        filterPicker(content, mode);
+        clearTimeout(box.__cbpT);
+        box.__cbpT = setTimeout(() => serverSearch(content, mode), 250);
+      });
       inp.addEventListener('keydown', (e) => {
         const vis = visibleItems(content);
         let i = +(box.dataset.active || 0);
@@ -529,6 +534,79 @@
       if (idx > 0) box.dataset.active = String(idx);
     }
     markActive(content);
+  }
+
+  // Die Startliste enthält nicht alle Aufgaben (z. B. „… / Kommunikation & Grafik / KV“).
+  // CrewBrains Server-Suche findet sie, vergleicht aber nur ein Wort mit dem Namen
+  // einer Ebene. Deshalb pro Wort still mitsuchen und fehlende Treffer anhängen.
+  // Ablauf wie beim CrewBrain-Suchfeld: Begriff setzen (setSuchbegriff), dann
+  // Treffer abrufen (printSuchergebnisse). Zum Schluss wird der Begriff wieder geleert.
+  const searchCache = new Map();
+  let searchQueue = Promise.resolve();
+  function searchPost(content, mode, term, setTerm) {
+    const form = content.querySelector('form[data-package="FremdIDAuswahl"]');
+    const native = content.querySelector('input[name="fremdidauswahl-suchbegriff"]');
+    if (!form || !native) return Promise.resolve('');
+    const fd = new FormData(form);
+    const action = fd.get('action');
+    ['ajax', 'package', 'mode', 'action'].forEach((k) => fd.delete(k));
+    fd.set('fremdidauswahl-suchbegriff', term);
+    if (setTerm && action) fd.append('action', action);
+    fd.append('ajax', 'printSuchergebnisse');
+    fd.append('package', 'FremdIDAuswahl');
+    fd.append('mode', form.dataset.mode || mode);
+    const tag = native.outerHTML;
+    fd.append('element', tag.slice(0, tag.indexOf('>') + 1));
+    return fetch(location.href, { method: 'POST', body: fd, credentials: 'same-origin' })
+      .then((r) => (r.ok ? r.text() : ''))
+      .catch(() => '');
+  }
+  function fetchAll(content, mode, terms) {
+    const todo = terms.filter((t) => !searchCache.has(mode + '|' + t.toLowerCase()));
+    const run = async () => {
+      if (!todo.length) return;
+      for (const t of todo) {
+        await searchPost(content, mode, t, true);
+        const html = await searchPost(content, mode, '', false);
+        if (html) searchCache.set(mode + '|' + t.toLowerCase(), html);
+      }
+      await searchPost(content, mode, '', true);
+    };
+    searchQueue = searchQueue.then(run, run);
+    return searchQueue.then(() => terms.map((t) => searchCache.get(mode + '|' + t.toLowerCase()) || ''));
+  }
+  async function serverSearch(content, mode) {
+    const box = content.querySelector('.cbp-search');
+    const ul = content.querySelector('ul.listview');
+    if (!box || !ul) return;
+    const terms = [...new Set(box.querySelector('input').value.trim().split(/\s+/).filter((w) => w.length >= 2))].slice(0, 4);
+    if (!terms.length) return;
+    const seq = (box.__cbpSeq = (box.__cbpSeq || 0) + 1);
+    const htmls = await fetchAll(content, mode, terms);
+    if (seq !== box.__cbpSeq || !content.isConnected || !ul.isConnected) return;
+    const have = new Set([...ul.querySelectorAll('a[data-fremdid]')].map((a) => a.dataset.fremdid));
+    const tpl = document.createElement('template');
+    const add = [];
+    htmls.forEach((h) => {
+      tpl.innerHTML = h;
+      tpl.content.querySelectorAll('li').forEach((li) => {
+        const a = li.querySelector('a[data-fremdid]');
+        if (!a || have.has(a.dataset.fremdid)) return;
+        have.add(a.dataset.fremdid);
+        li.classList.add('cbp-extra');
+        add.push(li);
+      });
+    });
+    if (!add.length) return;
+    let head = ul.querySelector(':scope > li.cbp-extra-head');
+    if (!head) {
+      head = document.createElement('li');
+      head.className = 'headline cbp-extra-head';
+      head.textContent = 'Weitere Treffer';
+      ul.appendChild(head);
+    }
+    add.sort((x, y) => x.textContent.localeCompare(y.textContent, 'de')).forEach((li) => ul.appendChild(li));
+    filterPicker(content, mode);
   }
 
   // ---------- 4. „Heute erfassen“ / „Gestern erfassen“ ----------

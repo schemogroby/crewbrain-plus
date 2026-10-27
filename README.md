@@ -7,7 +7,7 @@ Chrome-Erweiterung für eine schnellere Zeiterfassung in CrewBrain. Sie ändert 
 - **Rasteransicht (Tag):** Anwesenheit (grün), Pausen (rot) und noch nicht verbuchte Anwesenheitszeit (orange) liegen als Hintergrund in allen Aufgaben-Zeilen. Oben steht eine Zusammenfassung mit Anwesenheit, Pause, verbuchter Zeit und offenen Lücken.
 - **Zoom:** 0–24, 6–18, „Anwesenheit“ (automatisch) sowie − / +. Scrollen geht seitlich mit Trackpad oder ⇧ + Mausrad, die Spalte mit den Aufgabennamen bleibt stehen.
 - **Bündig setzen:** Im Dialog eines Balkens gibt es Knöpfe für Start und Ende (Anwesenheitsbeginn und -ende, Pausen, Start und Ende anderer Jobs) sowie „Lücke füllen“.
-- **Aufgabensuche:** Wortteile in beliebiger Reihenfolge über Event, Bereich und Aufgabe, zum Beispiel `arena meet`. ↑↓ wählen aus, Enter übernimmt, zuletzt genutzte Aufgaben stehen als Knöpfe darüber.
+- **Aufgabensuche:** Wortteile in beliebiger Reihenfolge über Event, Bereich und Aufgabe, zum Beispiel `arena meet`. ↑↓ wählen aus, Enter übernimmt, zuletzt genutzte Aufgaben stehen als Knöpfe darüber. Aufgaben, die CrewBrain nicht in der Startliste zeigt (z. B. „… / Kommunikation & Grafik / KV“), werden im Hintergrund mitgesucht und erscheinen unter „Weitere Treffer“.
 - **„Heute erfassen“ / „Gestern erfassen“:** Die Knöpfe in der Zeiterfassung öffnen das Raster für heute bzw. den letzten Arbeitstag (montags heißt der Knopf „Freitag erfassen“), auch wenn der Tag in der Vorwoche liegt. Oben muss dafür dein eigener Name ausgewählt sein.
 - **„Zukünftige Tage simulieren“** wird automatisch eingeschaltet. Schaltest du es selbst aus, bleibt es in diesem Tab aus.
 - **Darkmode:** Die Erweiterung folgt dem hellen bzw. dunklen Farbschema von CrewBrain.
