@@ -1,6 +1,6 @@
 # CrewBrain Plus
 
-Chrome-Erweiterung für eine schnellere Zeiterfassung in CrewBrain (I-Motion). Sie ändert nur die Oberfläche und speichert nie selbst. Gespeichert wird wie gewohnt über „Zeit ändern“ und „Speichern“.
+Chrome-Erweiterung für eine schnellere Zeiterfassung in CrewBrain. Sie ändert nur die Oberfläche und speichert nie selbst. Gespeichert wird wie gewohnt über „Zeit ändern“ und „Speichern“.
 
 ## Funktionen
 
