@@ -1,4 +1,4 @@
-// CrewBrain Plus – Ergänzungen für die Zeiterfassung (nur Oberfläche, speichert nichts selbst).
+// Zeiterfassung Plus – Ergänzungen für die Zeiterfassung (nur Oberfläche, speichert nichts selbst).
 // 1. Raster: Anwesenheit/Pausen/Lücken als Hintergrund in allen Aufgaben-Zeilen + Zusammenfassung
 // 2. Bearbeiten-Dialog: Start/Ende per Klick bündig setzen, „Lücke füllen“
 // 3. Aufgaben-Dialog: Suche über Event + Aufgabe, Wortteile in beliebiger Reihenfolge, Tastatur, zuletzt genutzt
@@ -292,9 +292,17 @@
     [150, 500, 1200].forEach((ms) => setTimeout(apply, ms));
     if (firstTime) {
       scroller.classList.add('cbp-scroller');
-      const mine = () => { scroller.dataset.cbpScrollToken = 'user'; };
+      let keep = null;
+      const mine = () => { scroller.dataset.cbpScrollToken = 'user'; keep = scroller.scrollLeft; };
       scroller.addEventListener('wheel', mine, { passive: true });
-      scroller.addEventListener('pointerdown', mine);
+      scroller.addEventListener('pointerdown', mine, true);
+      // Fokus auf ein Feld in der fixierten Spalte lässt Chrome nach links scrollen – Position halten
+      scroller.addEventListener('focusin', (e) => {
+        if (keep === null || !e.target.closest('.cbp-sticky')) return;
+        const s = keep;
+        requestAnimationFrame(() => { scroller.scrollLeft = s; });
+        setTimeout(() => { scroller.scrollLeft = s; }, 80);
+      });
     }
   }
 
@@ -520,7 +528,7 @@
       return;
     }
     if (link) link.click();
-    else alert('CrewBrain Plus: Der heutige Tag ist in dieser Ansicht nicht zu finden. Bitte Wochenansicht mit deinem Namen öffnen.');
+    else alert('Zeiterfassung Plus: Der heutige Tag ist in dieser Ansicht nicht zu finden. Bitte Wochenansicht mit deinem Namen öffnen.');
   }
   function ensureTodayButton() {
     if (!/\/zeiterfassung/.test(location.pathname)) return;
@@ -571,7 +579,7 @@
       ensureTodayButton();
       pendingToday();
     } catch (e) {
-      console.warn('[CrewBrain Plus]', e);
+      console.warn('[Zeiterfassung Plus]', e);
     }
   }
 

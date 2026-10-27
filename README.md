@@ -1,4 +1,4 @@
-# CrewBrain Plus
+# Zeiterfassung Plus für CrewBrain
 
 Chrome-Erweiterung für eine schnellere Zeiterfassung in CrewBrain. Sie ändert nur die Oberfläche und speichert nie selbst. Gespeichert wird wie gewohnt über „Zeit ändern“ und „Speichern“.
 
@@ -26,7 +26,7 @@ Optional als eigene App im Dock: In CrewBrain ⋮ → Streamen, speichern und te
 git pull
 ```
 
-Danach in `chrome://extensions` bei „CrewBrain Plus“ auf den Neu-laden-Pfeil klicken und CrewBrain neu laden. Wer das ZIP benutzt: neues ZIP herunterladen und den alten Ordner ersetzen. Der Ordnerpfad muss dabei gleich bleiben.
+Danach in `chrome://extensions` bei „Zeiterfassung Plus für CrewBrain“ auf den Neu-laden-Pfeil klicken und CrewBrain neu laden. Wer das ZIP benutzt: neues ZIP herunterladen und den alten Ordner ersetzen. Der Ordnerpfad muss dabei gleich bleiben.
 
 ## Hinweise
 
