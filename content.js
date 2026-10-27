@@ -531,11 +531,34 @@
     markActive(content);
   }
 
-  // ---------- 4. „Heute erfassen“ ----------
-  function todayLink() {
-    const d = new Date();
+  // ---------- 4. „Heute erfassen“ / „Gestern erfassen“ ----------
+  const WD = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+  const WD_LONG = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+  const isoDate = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  function startOfDay(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
+  // letzter Arbeitstag vor heute (montags also Freitag)
+  function lastWorkday() {
+    const d = startOfDay(new Date());
+    do { d.setDate(d.getDate() - 1); } while (d.getDay() === 0 || d.getDay() === 6);
+    return d;
+  }
+  function isoWeek(d) {
+    const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    const day = t.getUTCDay() || 7;
+    t.setUTCDate(t.getUTCDate() + 4 - day);
+    const y = t.getUTCFullYear();
+    return { year: y, week: Math.ceil(((t - Date.UTC(y, 0, 1)) / 86400000 + 1) / 7) };
+  }
+  // Wochenansicht des Mitarbeiters, z. B. /zeiterfassung/2026/44/2-max-muster
+  function weekUrl(d) {
+    const slug = location.pathname.split('/').find((p) => /^\d+-[a-z]/i.test(p));
+    if (!slug) return null;
+    const w = isoWeek(d);
+    return `/zeiterfassung/${w.year}/${w.week}/${slug}`;
+  }
+  function dayLink(d) {
     const dd = pad(d.getDate());
-    const wd = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'][d.getDay()];
+    const wd = WD[d.getDay()];
     return [...document.querySelectorAll('tr')].map((tr) => {
       const c = tr.children;
       if (c.length < 2 || c[0].textContent.trim() !== dd) return null;
@@ -547,29 +570,42 @@
     if (!lab) return null;
     return lab.querySelector('input[type=checkbox]') || document.getElementById(lab.htmlFor);
   }
-  function openToday() {
-    const link = todayLink();
+  function setPending(d) {
+    try { sessionStorage.setItem('cbp-open-day', JSON.stringify({ date: isoDate(d), t: Date.now() })); } catch (e) {}
+  }
+  function openDay(d) {
+    const isToday = isoDate(d) === isoDate(new Date());
     const cb = simulateCheckbox();
-    if (cb && !cb.checked) {
-      try { sessionStorage.setItem('cbp-open-today', String(Date.now())); } catch (e) {}
-      cb.click();
+    if (isToday && cb && !cb.checked) { setPending(d); cb.click(); return; }
+    const link = dayLink(d);
+    if (link) { link.click(); return; }
+    const url = weekUrl(d);
+    if (url) { setPending(d); location.href = url; return; }
+    alert('Zeiterfassung Plus: Der Tag ist in dieser Ansicht nicht zu finden. Bitte die Wochenansicht mit deinem Namen öffnen.');
+  }
+  function ensureDayButtons() {
+    if (!/\/zeiterfassung/.test(location.pathname)) return;
+    const y = lastWorkday();
+    const yLabel = (new Date().getDay() === 1 ? WD_LONG[y.getDay()] : 'Gestern') + ' erfassen';
+    const existing = document.querySelector('.cbp-yesterday');
+    if (existing) {
+      if (existing.textContent !== yLabel) existing.textContent = yLabel;
       return;
     }
-    if (link) link.click();
-    else alert('Zeiterfassung Plus: Der heutige Tag ist in dieser Ansicht nicht zu finden. Bitte Wochenansicht mit deinem Namen öffnen.');
-  }
-  function ensureTodayButton() {
-    if (!/\/zeiterfassung/.test(location.pathname)) return;
-    if (document.querySelector('.cbp-today')) return;
     const heute = [...document.querySelectorAll('a, button')].find((b) => b.textContent.trim() === 'Heute' && b.getBoundingClientRect().top < 60);
     if (!heute) return;
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'cbp-today';
-    btn.textContent = 'Heute erfassen';
-    btn.addEventListener('click', openToday);
     const host = heute.closest('div') || heute.parentElement;
-    host.parentElement.insertBefore(btn, host);
+    const mk = (cls, text, fn) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = cls;
+      b.textContent = text;
+      b.addEventListener('click', fn);
+      host.parentElement.insertBefore(b, host);
+      return b;
+    };
+    mk('cbp-today cbp-secondary cbp-yesterday', yLabel, () => openDay(lastWorkday()));
+    mk('cbp-today', 'Heute erfassen', () => openDay(startOfDay(new Date())));
   }
   // „Zukünftige Tage simulieren“ standardmäßig an. Schaltest du es selbst aus, bleibt es in diesem Tab aus.
   function ensureSimulation() {
@@ -590,15 +626,18 @@
     try { sessionStorage.setItem('cbp-sim-click', String(Date.now())); } catch (e) {}
     cb.click();
   }
-  function pendingToday() {
-    let t = 0;
-    try { t = +sessionStorage.getItem('cbp-open-today') || 0; } catch (e) {}
-    if (!t) return;
-    if (Date.now() - t > 15000) { try { sessionStorage.removeItem('cbp-open-today'); } catch (e) {} return; }
+  function pendingDay() {
+    let p = null;
+    try { p = JSON.parse(sessionStorage.getItem('cbp-open-day') || 'null'); } catch (e) {}
+    if (!p) return;
+    if (Date.now() - p.t > 20000) { try { sessionStorage.removeItem('cbp-open-day'); } catch (e) {} return; }
+    const [y, m, dd] = p.date.split('-').map(Number);
+    const d = new Date(y, m - 1, dd);
     const cb = simulateCheckbox();
-    const link = todayLink();
-    if (cb && cb.checked && link) {
-      try { sessionStorage.removeItem('cbp-open-today'); } catch (e) {}
+    if (p.date === isoDate(new Date()) && cb && !cb.checked) return;
+    const link = dayLink(d);
+    if (link) {
+      try { sessionStorage.removeItem('cbp-open-day'); } catch (e) {}
       link.click();
     }
   }
@@ -624,9 +663,9 @@
         });
       });
       document.querySelectorAll('#fremdidauswahl-content').forEach(enhancePicker);
-      ensureTodayButton();
+      ensureDayButtons();
       ensureSimulation();
-      pendingToday();
+      pendingDay();
     } catch (e) {
       console.warn('[Zeiterfassung Plus]', e);
     }

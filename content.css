@@ -171,3 +171,7 @@ li.cbp-active > a {
   font-size: 13px;
   cursor: pointer;
 }
+.cbp-today.cbp-secondary {
+  background: transparent;
+  color: var(--cbp-ink);
+}
