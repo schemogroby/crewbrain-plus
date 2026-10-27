@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Store-Ausfüllhilfe</title>
+<style>
+  :root { --ink:#0b1f33; --soft:#5b6b7a; --line:#d5dbe1; --bg:#f5f7f9; --ok:#1f9d55; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.45 -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif; }
+  main { max-width:760px; margin:0 auto; padding:24px 16px 60px; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  h2 { font-size:15px; text-transform:uppercase; letter-spacing:.06em; color:var(--soft); margin:28px 0 8px; }
+  .f { background:#fff; border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin:8px 0; }
+  .h { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .h b { font-size:14px; }
+  pre { white-space:pre-wrap; margin:6px 0 0; font:13px/1.45 ui-monospace, Menlo, monospace; color:#26394d; max-height:160px; overflow:auto; }
+  button { border:1px solid var(--ink); background:var(--ink); color:#fff; border-radius:6px; padding:5px 12px; font-size:13px; cursor:pointer; flex-shrink:0; }
+  button.done { background:var(--ok); border-color:var(--ok); }
+  .note { color:var(--soft); font-size:13px; margin:4px 0 0; }
+  .imgs { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+  .imgs figure { margin:0; font-size:12px; color:var(--soft); }
+  .imgs img { display:block; height:80px; border:1px solid var(--line); border-radius:4px; background:#fff; }
+</style>
+</head>
+<body>
+<main>
+<h1>Chrome Web Store – Ausfüllhilfe</h1>
+<p class="note">Feld für Feld: „Kopieren“ klicken, im Dashboard ins Feld einfügen (⌘V). Bilder liegen im Finder-Ordner <code>crewbrain-plus/store</code> (Symbol in <code>icons/</code>) – von dort auf die Upload-Felder ziehen.</p>
+
+<h2>1 · Store-Eintrag</h2>
+<div class="f"><div class="h"><b>Beschreibung</b><button data-c="desc">Kopieren</button></div><pre id="desc">Zeiterfassung Plus macht die tägliche Zeiterfassung in CrewBrain schneller und übersichtlicher.
+
+• Anwesenheit im Blick: In der Tagesansicht liegen Anwesenheit (grün), Pausen (rot) und noch nicht verbuchte Zeit (orange) direkt hinter allen Aufgaben-Zeilen. Eine Zusammenfassung zeigt Anwesenheit, Pause, verbuchte Zeit und offene Lücken.
+• Zoom: Auf 6–18 Uhr, auf die eigene Anwesenheit oder auf den ganzen Tag. Seitlich scrollen, die Namensspalte bleibt stehen.
+• Bündig setzen: Im Bearbeiten-Dialog Start und Ende mit einem Klick an Anwesenheitsbeginn, Pausen oder den vorherigen und nächsten Job anlegen. „Lücke füllen“ setzt einen Job genau in die freie Zeit.
+• Bessere Aufgabensuche: Wortteile in beliebiger Reihenfolge über Event, Bereich und Aufgabe, zum Beispiel „arena meet“. Bedienung per Tastatur, zuletzt genutzte Aufgaben als Schnellauswahl.
+• „Heute erfassen“: öffnet das Raster für den heutigen Tag mit einem Klick.
+
+Die Erweiterung ändert nur die Darstellung. Gespeichert wird weiterhin ausschließlich über die Schaltflächen von CrewBrain. Es werden keine Daten gesammelt oder übertragen.
+
+Inoffizielles Hilfsprogramm, nicht mit dem Anbieter von CrewBrain verbunden.</pre></div>
+<div class="f"><b>Kategorie</b> Produktivität (bzw. „Tools“ / „Workflow &amp; Planung“) · <b>Sprache</b> Deutsch</div>
+<div class="f"><b>Grafiken</b> (aus dem Finder ziehen)
+  <div class="imgs">
+    <figure><img src="../icons/icon128.png" alt="">Symbol 128 × 128<br>icons/icon128.png</figure>
+    <figure><img src="screenshot-1-raster.png" alt="">Screenshot 1</figure>
+    <figure><img src="screenshot-2-dialog.png" alt="">Screenshot 2</figure>
+    <figure><img src="screenshot-3-suche.png" alt="">Screenshot 3</figure>
+    <figure><img src="promo-440x280.png" alt="">Kleine Werbekachel</figure>
+  </div>
+</div>
+
+<h2>2 · Datenschutz</h2>
+<div class="f"><div class="h"><b>Alleiniger Zweck</b><button data-c="zweck">Kopieren</button></div><pre id="zweck">Ergänzt die Zeiterfassungsansicht von CrewBrain um Anzeigehilfen (Anwesenheit im Raster, Zoom, Zeitvorschläge, Aufgabensuche), damit Arbeitszeiten schneller erfasst werden können.</pre></div>
+<div class="f"><div class="h"><b>Begründung Hostberechtigung</b><button data-c="host">Kopieren</button></div><pre id="host">Die Erweiterung blendet ihre Hilfen ausschließlich in die Zeiterfassungsseiten von CrewBrain ein. CrewBrain-Instanzen liegen auf Subdomains wie firma.crewbrain.com, deshalb gilt die Berechtigung für alle Subdomains von crewbrain.com und für keine anderen Seiten.</pre></div>
+<div class="f"><b>Remote-Code</b> → „Nein, ich verwende keinen Remote-Code“</div>
+<div class="f"><b>Datennutzung</b> → keine Kategorie ankreuzen · unten alle drei Bestätigungen anhaken</div>
+<div class="f"><div class="h"><b>URL Datenschutzerklärung</b><button data-c="priv">Kopieren</button></div><pre id="priv">https://github.com/schemogroby/crewbrain-plus/blob/main/PRIVACY.md</pre></div>
+
+<h2>3 · Vertrieb</h2>
+<div class="f"><b>Sichtbarkeit</b> → Nicht gelistet · <b>Regionen</b> → alle</div>
+
+<h2>4 · Einreichen</h2>
+<div class="f">Oben „Zur Überprüfung einreichen“. Falls eine Kontakt-E-Mail verlangt wird: im Konto-Tab eintragen und den Bestätigungslink im Postfach öffnen.</div>
+</main>
+<script>
+document.querySelectorAll('button[data-c]').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var t = document.getElementById(b.dataset.c).textContent;
+    navigator.clipboard.writeText(t).then(function () {
+      b.textContent = 'Kopiert ✓';
+      b.classList.add('done');
+    });
+  });
+});
+</script>
+</body>
+</html>

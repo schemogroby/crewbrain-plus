@@ -12,6 +12,8 @@ Chrome-Erweiterung für eine schnellere Zeiterfassung in CrewBrain. Sie ändert 
 
 ## Installation
 
+**Chrome Web Store:** Version 1.0.0 ist eingereicht und in Prüfung (Stand 27.10.2026). Nach der Freigabe folgt hier der Link, Updates kommen dann automatisch. Bis dahin funktioniert die Installation als entpackte Erweiterung:
+
 1. Repo herunterladen: `git clone …` oder auf GitHub **Code → Download ZIP** und das ZIP entpacken.
 2. In Chrome `chrome://extensions` öffnen.
 3. Oben rechts den **Entwicklermodus** einschalten.
