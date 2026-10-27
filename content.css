@@ -1,5 +1,36 @@
 /* Zeiterfassung Plus */
 
+:root {
+  --cbp-panel: #eef6f0;
+  --cbp-ink: #0b1f33;
+  --cbp-soft: #5b6b7a;
+  --cbp-line: #c9d3dc;
+  --cbp-btn: #ffffff;
+  --cbp-accent: #0b1f33;
+  --cbp-accent-ink: #ffffff;
+  --cbp-accent-soft: #b9c6d2;
+  --cbp-gap: rgba(255, 170, 0, 0.28);
+  --cbp-ok: #1c7c45;
+  --cbp-active-bg: #fde8ea;
+  --cbp-active-line: #e8505b;
+  --cbp-sticky-edge: #d5dbe1;
+}
+html.cbp-dark {
+  --cbp-panel: #17312a;
+  --cbp-ink: #e6edf3;
+  --cbp-soft: #9fb0bf;
+  --cbp-line: #3d4f61;
+  --cbp-btn: #1e2b38;
+  --cbp-accent: #e6edf3;
+  --cbp-accent-ink: #0b1f33;
+  --cbp-accent-soft: #4b5d6e;
+  --cbp-gap: rgba(255, 170, 0, 0.30);
+  --cbp-ok: #5fd394;
+  --cbp-active-bg: #4a2228;
+  --cbp-active-line: #ff6b76;
+  --cbp-sticky-edge: #3d4f61;
+}
+
 .cbp-summary {
   display: flex;
   flex-wrap: wrap;
@@ -8,8 +39,8 @@
   margin: 6px 0 10px;
   padding: 8px 12px;
   border-radius: 6px;
-  background: #eef6f0;
-  color: #0b1f33;
+  background: var(--cbp-panel);
+  color: var(--cbp-ink);
   font-size: 13px;
   line-height: 1.4;
 }
@@ -18,14 +49,14 @@
   display: inline-block;
   padding: 1px 7px;
   border-radius: 10px;
-  background: rgba(255, 170, 0, 0.28);
+  background: var(--cbp-gap);
   font-variant-numeric: tabular-nums;
 }
-.cbp-summary .cbp-ok { color: #1c7c45; }
+.cbp-summary .cbp-ok { color: var(--cbp-ok); }
 .cbp-summary .cbp-toggle {
   margin-left: auto;
   cursor: pointer;
-  color: #5b6b7a;
+  color: var(--cbp-soft);
   text-decoration: underline;
 }
 
@@ -36,24 +67,24 @@
   align-items: center;
 }
 .cbp-zbtn {
-  border: 1px solid #c9d3dc;
-  background: #fff;
-  color: #0b1f33;
+  border: 1px solid var(--cbp-line);
+  background: var(--cbp-btn);
+  color: var(--cbp-ink);
   border-radius: 4px;
   padding: 1px 8px;
   font-size: 12px;
   cursor: pointer;
 }
 .cbp-zbtn.cbp-on {
-  background: #0b1f33;
-  border-color: #0b1f33;
-  color: #fff;
+  background: var(--cbp-accent);
+  border-color: var(--cbp-accent);
+  color: var(--cbp-accent-ink);
 }
 .workinghours__content table .cbp-sticky {
   position: sticky !important;
   left: 0 !important;
   z-index: 20 !important;
-  box-shadow: 1px 0 0 #d5dbe1;
+  box-shadow: 1px 0 0 var(--cbp-sticky-edge);
 }
 .cbp-scroller {
   overflow-x: auto;
@@ -75,26 +106,26 @@
 }
 .cbp-snap-label {
   width: 42px;
-  color: #5b6b7a;
+  color: var(--cbp-soft);
 }
 .cbp-chip {
-  border: 1px solid #c9d3dc;
-  background: #fff;
-  color: #0b1f33;
+  border: 1px solid var(--cbp-line);
+  background: var(--cbp-btn);
+  color: var(--cbp-ink);
   border-radius: 12px;
   padding: 2px 8px;
   font-size: 12px;
   cursor: pointer;
   font-variant-numeric: tabular-nums;
 }
-.cbp-chip:hover { border-color: #0b1f33; }
+.cbp-chip:hover { border-color: var(--cbp-accent); }
 .cbp-chip.cbp-fill {
-  background: #0b1f33;
-  color: #fff;
-  border-color: #0b1f33;
+  background: var(--cbp-accent);
+  color: var(--cbp-accent-ink);
+  border-color: var(--cbp-accent);
 }
-.cbp-chip small { color: #7a8794; margin-left: 3px; }
-.cbp-chip.cbp-fill small { color: #b9c6d2; }
+.cbp-chip small { color: var(--cbp-soft); margin-left: 3px; }
+.cbp-chip.cbp-fill small { color: var(--cbp-accent-soft); }
 
 /* Aufgaben-Suche */
 .cbp-search {
@@ -105,14 +136,16 @@
   box-sizing: border-box;
   padding: 10px 14px;
   font-size: 16px;
-  border: 2px solid #0b1f33;
+  border: 2px solid var(--cbp-accent);
   border-radius: 6px;
   outline: none;
+  background: var(--cbp-btn);
+  color: var(--cbp-ink);
 }
 .cbp-search .cbp-hint {
   margin-top: 4px;
   font-size: 12px;
-  color: #7a8794;
+  color: var(--cbp-soft);
 }
 .cbp-recent {
   display: flex;
@@ -121,9 +154,9 @@
   margin-top: 6px;
 }
 li.cbp-active > a {
-  background: #fde8ea;
+  background: var(--cbp-active-bg);
   border-radius: 4px;
-  outline: 2px solid #e8505b;
+  outline: 2px solid var(--cbp-active-line);
 }
 .cbp-hidden { display: none !important; }
 
@@ -132,9 +165,9 @@ li.cbp-active > a {
   margin-right: 8px;
   padding: 4px 10px;
   border-radius: 4px;
-  border: 1px solid #0b1f33;
-  background: #0b1f33;
-  color: #fff;
+  border: 1px solid var(--cbp-accent);
+  background: var(--cbp-accent);
+  color: var(--cbp-accent-ink);
   font-size: 13px;
   cursor: pointer;
 }

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Zeiterfassung Plus für CrewBrain",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Inoffizielle Helfer für die CrewBrain-Zeiterfassung: Anwesenheit im Raster, Zoom, Zeiten bündig setzen, bessere Aufgabensuche.",
   "icons": {
     "16": "icons/icon16.png",

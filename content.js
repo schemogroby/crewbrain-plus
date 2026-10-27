@@ -6,12 +6,27 @@
 (() => {
   'use strict';
 
-  const COLORS = {
-    work: 'rgba(46, 180, 100, 0.16)',
-    pause: 'rgba(232, 80, 91, 0.16)',
-    gap: 'rgba(255, 170, 0, 0.30)',
-    line: 'rgba(20, 110, 60, 0.85)',
+  const PALETTE = {
+    light: {
+      work: 'rgba(46, 180, 100, 0.16)',
+      pause: 'rgba(232, 80, 91, 0.16)',
+      gap: 'rgba(255, 170, 0, 0.30)',
+      line: 'rgba(20, 110, 60, 0.85)',
+    },
+    dark: {
+      work: 'rgba(70, 200, 120, 0.14)',
+      pause: 'rgba(240, 90, 100, 0.16)',
+      gap: 'rgba(255, 170, 0, 0.18)',
+      line: 'rgba(110, 220, 150, 0.85)',
+    },
   };
+  // CrewBrain setzt data-theme am #main und tauscht die CSS-Datei (….light.css / ….dark.css)
+  function isDark() {
+    const m = document.getElementById('main');
+    if (m && m.dataset.theme) return m.dataset.theme === 'dark';
+    return !!document.querySelector('link[href*=".dark.css"]');
+  }
+  const colors = () => PALETTE[isDark() ? 'dark' : 'light'];
   const store = {
     get(k, d) { try { const v = localStorage.getItem('cbp-' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
     set(k, v) { try { localStorage.setItem('cbp-' + k, JSON.stringify(v)); } catch (e) {} },
@@ -124,16 +139,18 @@
     return `linear-gradient(to right, ${stops.join(', ')})`;
   }
   function linesGradient(points) {
+    const C = colors();
     const stops = [];
     for (const m of [...new Set(points)].sort((a, b) => a - b)) {
       const a = Math.max(0, m - 0.6), b = Math.min(1440, m + 0.6);
-      stops.push(`transparent ${pct(a)}`, `${COLORS.line} ${pct(a)}`, `${COLORS.line} ${pct(b)}`, `transparent ${pct(b)}`);
+      stops.push(`transparent ${pct(a)}`, `${C.line} ${pct(a)}`, `${C.line} ${pct(b)}`, `transparent ${pct(b)}`);
     }
     return stops.length ? `linear-gradient(to right, ${stops.join(', ')})` : '';
   }
 
   function paintGrid(table, g) {
     const on = store.get('overlay', true);
+    const COLORS = colors();
     const pauseOnly = subtract(g.pauses, []);
     const segs = [];
     // Arbeit ohne Pausen, darin Lücken hervorgehoben
@@ -250,6 +267,15 @@
     return { from: z.from, to: z.to };
   }
 
+  // erste deckende Hintergrundfarbe von el aufwärts (die fixierte Spalte braucht eine, sonst scheint das Raster durch)
+  function opaqueBg(el) {
+    for (let e = el; e && e !== document.documentElement; e = e.parentElement) {
+      const v = getComputedStyle(e).backgroundColor;
+      if (v && v !== 'transparent' && !/rgba\([^)]*,\s*0\)$/.test(v)) return v;
+    }
+    return isDark() ? '#1b2430' : '#fff';
+  }
+
   function applyZoom(table) {
     const scroller = table.parentElement; // div.hours (overflow: auto)
     if (!scroller) return;
@@ -264,14 +290,16 @@
     const hoursW = Math.round(avail * 24 / span);
     const key = `${range.from}-${range.to}-${scroller.clientWidth}`;
 
-    // linke Spalte fixieren (auch für neu hinzugekommene Zeilen)
+    // linke Spalte fixieren (auch für neu hinzugekommene Zeilen, neu bei Theme-Wechsel)
+    const theme = isDark() ? 'dark' : 'light';
     rows.forEach((tr) => {
       const c = tr.cells[0];
-      if (!c || c.dataset.cbpSticky || tr.cells.length < 2) return;
-      c.dataset.cbpSticky = '1';
+      if (!c || tr.cells.length < 2) return;
+      if (c.dataset.cbpSticky === theme) return;
+      c.dataset.cbpSticky = theme;
       c.classList.add('cbp-sticky');
-      const bgOf = (el) => { const v = el && getComputedStyle(el).backgroundColor; return v && v !== 'rgba(0, 0, 0, 0)' && v !== 'transparent' ? v : null; };
-      c.style.backgroundColor = bgOf(c) || bgOf(tr) || '#fff';
+      c.style.backgroundColor = '';
+      c.style.backgroundColor = opaqueBg(c);
       c.style.width = c.style.minWidth = c.style.maxWidth = labelW + 'px';
     });
 
@@ -543,6 +571,25 @@
     const host = heute.closest('div') || heute.parentElement;
     host.parentElement.insertBefore(btn, host);
   }
+  // „Zukünftige Tage simulieren“ standardmäßig an. Schaltest du es selbst aus, bleibt es in diesem Tab aus.
+  function ensureSimulation() {
+    if (!/\/zeiterfassung/.test(location.pathname)) return;
+    const cb = simulateCheckbox();
+    if (!cb) return;
+    if (!cb.dataset.cbpWatch) {
+      cb.dataset.cbpWatch = '1';
+      cb.addEventListener('change', (e) => {
+        if (!e.isTrusted) return;
+        try { sessionStorage.setItem('cbp-sim-off', cb.checked ? '' : '1'); } catch (err) {}
+      });
+    }
+    if (cb.checked) return;
+    let off = '', last = 0;
+    try { off = sessionStorage.getItem('cbp-sim-off') || ''; last = +sessionStorage.getItem('cbp-sim-click') || 0; } catch (e) {}
+    if (off || Date.now() - last < 20000) return; // Schutz gegen Endlosschleife, falls es nicht hängen bleibt
+    try { sessionStorage.setItem('cbp-sim-click', String(Date.now())); } catch (e) {}
+    cb.click();
+  }
   function pendingToday() {
     let t = 0;
     try { t = +sessionStorage.getItem('cbp-open-today') || 0; } catch (e) {}
@@ -564,6 +611,7 @@
   }
   function run() {
     try {
+      document.documentElement.classList.toggle('cbp-dark', isDark());
       document.querySelectorAll('table[data-zeitraumvon]').forEach((table) => {
         if (!table.closest('.workinghours__content')) return;
         const g = readGrid(table);
@@ -577,6 +625,7 @@
       });
       document.querySelectorAll('#fremdidauswahl-content').forEach(enhancePicker);
       ensureTodayButton();
+      ensureSimulation();
       pendingToday();
     } catch (e) {
       console.warn('[Zeiterfassung Plus]', e);
@@ -588,7 +637,8 @@
     if (muts.every((m) => m.target.closest && m.target.closest('.cbp-summary, .cbp-snap, .cbp-search, .cbp-today'))) return;
     schedule();
   });
-  obs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
+  obs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style', 'data-theme'] });
+  obs.observe(document.head, { childList: true, subtree: true, attributes: true, attributeFilter: ['href'] });
   document.addEventListener('change', schedule, true);
   window.addEventListener('resize', schedule);
   run();

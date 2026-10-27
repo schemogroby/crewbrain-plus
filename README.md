@@ -8,7 +8,9 @@ Chrome-Erweiterung für eine schnellere Zeiterfassung in CrewBrain. Sie ändert 
 - **Zoom:** 0–24, 6–18, „Anwesenheit“ (automatisch) sowie − / +. Scrollen geht seitlich mit Trackpad oder ⇧ + Mausrad, die Spalte mit den Aufgabennamen bleibt stehen.
 - **Bündig setzen:** Im Dialog eines Balkens gibt es Knöpfe für Start und Ende (Anwesenheitsbeginn und -ende, Pausen, Start und Ende anderer Jobs) sowie „Lücke füllen“.
 - **Aufgabensuche:** Wortteile in beliebiger Reihenfolge über Event, Bereich und Aufgabe, zum Beispiel `arena meet`. ↑↓ wählen aus, Enter übernimmt, zuletzt genutzte Aufgaben stehen als Knöpfe darüber.
-- **„Heute erfassen“:** Der Knopf in der Zeiterfassung schaltet „Zukünftige Tage simulieren“ bei Bedarf ein und öffnet das Raster für heute. Oben muss dafür dein eigener Name ausgewählt sein.
+- **„Heute erfassen“:** Der Knopf in der Zeiterfassung öffnet das Raster für heute. Oben muss dafür dein eigener Name ausgewählt sein.
+- **„Zukünftige Tage simulieren“** wird automatisch eingeschaltet. Schaltest du es selbst aus, bleibt es in diesem Tab aus.
+- **Darkmode:** Die Erweiterung folgt dem hellen bzw. dunklen Farbschema von CrewBrain.
 
 ## Installation
 
