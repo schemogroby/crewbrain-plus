@@ -212,10 +212,10 @@
         `<span>verbucht <b>${fmtDur(booked)}</b> / ${fmtDur(len(net))}</span>` +
         `<span>${gapHtml}</span>`;
     }
-    const z = store.get('zoom', { mode: 'range', from: 6, to: 18 });
+    const z = getZoom();
     const zb = (mode, label, extra = '') => `<button type="button" class="cbp-zbtn${z.mode === mode && (!extra || extra === `${z.from}-${z.to}`) ? ' cbp-on' : ''}" data-zoom="${mode}" data-range="${extra}">${label}</button>`;
     html += `<span class="cbp-zoom">` +
-      zb('full', '0–24') + zb('range', '6–18', '6-18') + zb('auto', 'Anwesenheit') +
+      zb('full', '0–24') + zb('range', '6–20', '6-20') + zb('auto', 'Anwesenheit') +
       `<button type="button" class="cbp-zbtn" data-zoom="out" title="mehr Stunden zeigen">−</button>` +
       `<button type="button" class="cbp-zbtn" data-zoom="in" title="weniger Stunden, größer">+</button>` +
       `</span>`;
@@ -250,12 +250,17 @@
   }
 
   // ---------- 1b. Zoom / Fokus-Zeitraum ----------
+  // Standard 6–20; ein gespeichertes 6–18 (alter Standard-Knopf) wird mitgezogen
+  function getZoom() {
+    const z = store.get('zoom', { mode: 'range', from: 6, to: 20 });
+    return z.mode === 'range' && z.from === 6 && z.to === 18 ? { mode: 'range', from: 6, to: 20 } : z;
+  }
   function currentRange(table) {
-    const z = store.get('zoom', { mode: 'range', from: 6, to: 18 });
+    const z = getZoom();
     if (z.mode === 'full') return { from: 0, to: 24 };
     if (z.mode === 'auto') {
       const g = table.__cbpGrid;
-      if (!g || !g.work.length) return { from: 6, to: 18 };
+      if (!g || !g.work.length) return { from: 6, to: 20 };
       const start = g.work[0].from;
       let end = g.work[g.work.length - 1].to;
       if (end >= 1439) { const n = new Date(); end = n.getHours() * 60 + n.getMinutes(); }
@@ -343,21 +348,25 @@
 
   function boundaries(g, self) {
     const pts = [];
-    const add = (m, txt) => { if (m > 0 && m < 1440) pts.push({ m, txt }); };
+    const add = (m, txt, dir) => { if (m > 0 && m < 1440) pts.push({ m, txt, dir }); };
     // Reihenfolge = Priorität der Beschriftung bei gleichem Zeitpunkt
-    g.pauses.forEach((p) => { add(p.from, 'Pause'); add(p.to, 'Pause-Ende'); });
+    g.pauses.forEach((p) => { add(p.from, 'Pause', 'close'); add(p.to, 'Pause-Ende', 'open'); });
     g.work.forEach((w, i) => {
-      add(w.from, i === 0 ? 'Anw.-Beginn' : 'Anw.');
-      add(w.to, i === g.work.length - 1 ? 'Anw.-Ende' : 'Anw.');
+      add(w.from, i === 0 ? 'Anw.-Beginn' : 'Anw.', 'open');
+      add(w.to, i === g.work.length - 1 ? 'Anw.-Ende' : 'Anw.', 'close');
     });
     g.jobs.filter((j) => j !== self).forEach((j) => {
       const short = j.label.split('/').slice(-1)[0].trim() || j.label;
-      add(j.from, 'Start ' + short);
-      add(j.to, 'Ende ' + short);
+      add(j.from, 'Start ' + short, 'close');
+      add(j.to, 'Ende ' + short, 'open');
     });
-    // gleiche Zeitpunkte zusammenfassen
+    // gleiche Zeitpunkte zusammenfassen; je Richtung die passende Beschriftung merken
     const byM = new Map();
-    pts.forEach((p) => { if (!byM.has(p.m)) byM.set(p.m, p); });
+    pts.forEach((p) => {
+      const q = byM.get(p.m) || { m: p.m, txt: p.txt };
+      if (!q[p.dir]) q[p.dir] = p.txt;
+      byM.set(p.m, q);
+    });
     return [...byM.values()].sort((a, b) => a.m - b.m);
   }
 
@@ -403,18 +412,197 @@
     const curFrom = self ? self.from : parseTime(vonInp.value);
     const curTo = self ? self.to : parseTime(bisInp.value);
     const pts = boundaries(g, self);
-    const near = (cur, list) => list.slice().sort((a, b) => Math.abs(a.m - cur) - Math.abs(b.m - cur)).slice(0, 5).sort((a, b) => a.m - b.m);
-    const startPts = near(curFrom, pts.filter((p) => curTo === null || p.m < curTo));
-    const endPts = near(curTo, pts.filter((p) => curFrom === null || p.m > curFrom));
-    const chip = (attr, p) => `<button type="button" class="cbp-chip" data-${attr}="${p.m}">${fmt(p.m)}<small>${p.txt}</small></button>`;
-    let html = '';
+    const startList = pts.filter((p) => curTo === null || p.m < curTo);
+    const endList = pts.filter((p) => curFrom === null || p.m > curFrom);
+    // wahrscheinlichster Start: letzter Punkt vor dem Ende, ab dem wieder frei ist (Ende des vorigen Jobs, Pausen-Ende, Anwesenheitsbeginn)
+    // wahrscheinlichstes Ende: erster Punkt nach dem Start, ab dem belegt ist (Start des nächsten Jobs, Pause, Anwesenheitsende)
+    const bestStart = startList.filter((p) => p.open).pop() || null;
+    const bestEnd = endList.find((p) => p.close) || null;
+    const best = (attr, p) => p
+      ? `<button type="button" class="cbp-chip cbp-best" data-${attr}="${p.m}">${fmt(p.m)}<small>${attr === 'von' ? p.open : p.close}</small></button>`
+      : '';
+    // ±15 rastet auf die nächste Viertelstunde ein (13:07 → 13:15 bzw. 13:00)
+    const step = (attr, cur, d) => {
+      if (cur === null) return '';
+      const m = d > 0 ? Math.floor(cur / 15) * 15 + 15 : Math.ceil(cur / 15) * 15 - 15;
+      const ok = m >= 0 && m <= 1440 && (attr === 'von' ? (curTo === null || m < curTo) : (curFrom === null || m > curFrom));
+      return `<button type="button" class="cbp-chip cbp-step" data-${attr}="${m}"${ok ? '' : ' disabled'}>${d > 0 ? '+15' : '−15'}</button>`;
+    };
+    let html = '<div class="cbp-cols cbp-steprow">' +
+      `<div class="cbp-col">${step('von', curFrom, -1)}${step('von', curFrom, 1)}</div>` +
+      `<div class="cbp-col">${step('bis', curTo, -1)}${step('bis', curTo, 1)}</div>` +
+      '</div>';
+    if (bestStart || bestEnd) {
+      html += '<div class="cbp-cols cbp-bestrow">' +
+        `<div class="cbp-col">${best('von', bestStart)}</div>` +
+        `<div class="cbp-col">${best('bis', bestEnd)}</div>` +
+        '</div>';
+    }
     const fill = self && !self.fz ? fillRange(g, self) : null;
     if (fill && (fill.from !== curFrom || fill.to !== curTo)) {
-      html += `<div class="cbp-snap-row"><span class="cbp-snap-label"></span><button type="button" class="cbp-chip cbp-fill" data-von="${fill.from}" data-bis="${fill.to}">Lücke füllen<small>${fmt(fill.from)}–${fmt(fill.to)}</small></button></div>`;
+      html += `<div class="cbp-fillrow"><button type="button" class="cbp-chip cbp-fill" data-von="${fill.from}" data-bis="${fill.to}">Lücke füllen<small>${fmt(fill.from)}–${fmt(fill.to)}</small></button></div>`;
     }
-    html += `<div class="cbp-snap-row"><span class="cbp-snap-label">Start</span>${startPts.map((p) => chip('von', p)).join('')}</div>`;
-    html += `<div class="cbp-snap-row"><span class="cbp-snap-label">Ende</span>${endPts.map((p) => chip('bis', p)).join('')}</div>`;
     if (box.dataset.html !== html) { box.innerHTML = html; box.dataset.html = html; }
+    // ±15 und Vorschläge mittig unter die Datum/Zeit-Felder
+    alignCols(box.querySelector('.cbp-steprow'), vonInp.parentElement, bisInp.parentElement);
+    alignCols(box.querySelector('.cbp-bestrow'), vonInp.parentElement, bisInp.parentElement);
+    fitBubble(bubble);
+  }
+
+  // zwei Spalten genau unter zwei Felder legen (Start / Ende)
+  function alignCols(cols, vonPick, bisPick) {
+    if (!cols) return;
+    const c = cols.getBoundingClientRect(), v = vonPick.getBoundingClientRect(), b = bisPick.getBoundingClientRect();
+    if (!c.width) return;
+    const k = cols.offsetWidth / c.width; // Bildschirm-Pixel → CSS-Pixel (Dialog ist gezoomt)
+    const a = (v.left - c.left) * k, w1 = v.width * k, gap = (b.left - v.right) * k, w2 = b.width * k;
+    if (a < 0 || gap < 0) return;
+    const tpl = [a, w1, gap, w2].map((x) => Math.round(x) + 'px').join(' ');
+    if (cols.style.gridTemplateColumns !== tpl) cols.style.gridTemplateColumns = tpl;
+  }
+
+
+  // Dialog etwas größer (siehe CSS); CrewBrain rechnet die Position für 400px Breite,
+  // deshalb danach in den sichtbaren Bereich schieben
+  function fitBubble(bubble) {
+    bubble.classList.add('cbp-big');
+    const r = bubble.getBoundingClientRect();
+    const over = r.right - (window.innerWidth - 8);
+    if (over > 0) {
+      bubble.style.left = Math.max(8, r.left - over) + 'px';
+      bubble.style.maxWidth = 'calc(100vw - 16px)';
+    }
+    const down = r.bottom - (window.innerHeight - 8);
+    if (down > 0) {
+      const top = Math.max(8, r.top - down);
+      bubble.style.top = top + 'px';
+      bubble.style.maxHeight = `calc(100vh - ${top + 8}px)`;
+    }
+  }
+
+  // ---------- 2b. Neuer Balken bündig zur Anwesenheit ----------
+  // CrewBrain zeigt beim Überfahren eine Vorschau „Neu…“ zur vollen Stunde (div.neu > a)
+  // und übernimmt beim Klick deren data-uhrzeitvon/-bis. Ragt die Stunde über Anwesenheit
+  // oder Pause hinaus, wird die Vorschau auf die Anwesenheit gekappt.
+  function clipGhost(a) {
+    const td = a.closest('td.stunden');
+    const table = a.closest('table[data-zeitraumvon]');
+    if (!td || !table || td.dataset.zugehoerigkeit === 'FZ') return null;
+    const g = table.__cbpGrid;
+    if (!g || !g.work.length) return null;
+    const l = parseInt(a.dataset.left, 10), r = parseInt(a.dataset.right, 10);
+    if (isNaN(l) || isNaN(r)) return null;
+    const pick = (segs) => {
+      let best = null, bestOv = 0;
+      segs.forEach((s) => {
+        const ov = Math.min(r, s.to) - Math.max(l, s.from);
+        if (ov > bestOv) { bestOv = ov; best = s; }
+      });
+      return best;
+    };
+    // zuerst die freie Zeit (ohne andere Jobs), sonst nur die Anwesenheit
+    const net = subtract(g.work, g.pauses);
+    const best = pick(subtract(net, union(g.jobs))) || pick(net);
+    if (!best) return null;
+    return { from: Math.max(l, best.from), to: Math.min(r, best.to) };
+  }
+  function applyGhost(a, setData) {
+    const c = clipGhost(a);
+    if (!c) return;
+    const l = parseInt(a.dataset.left, 10), r = parseInt(a.dataset.right, 10);
+    if (c.from === l && c.to === r) return;
+    a.style.left = `calc(100% / 1440 * ${c.from})`;
+    a.style.width = `calc(100% / 1440 * ${c.to - c.from})`;
+    a.setAttribute('data-uhrzeitvon', fmt(c.from));
+    a.setAttribute('data-uhrzeitbis', fmt(c.to));
+    // data-left/-right erst beim Klick setzen: CrewBrain baut die Vorschau sonst bei jeder Mausbewegung neu
+    if (setData) { a.setAttribute('data-left', c.from); a.setAttribute('data-right', c.to); }
+  }
+  document.addEventListener('mousemove', (e) => {
+    const td = e.target.closest && e.target.closest('.workinghours__content td.stunden');
+    const a = td && td.querySelector('div.neu > a');
+    if (a) applyGhost(a, false);
+  });
+  // Capture-Phase: läuft vor CrewBrains Klick-Handler, der die Zeiten übernimmt
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest && e.target.closest('.workinghours__content table div.neu > a');
+    if (a) applyGhost(a, true);
+  }, true);
+
+  // ---------- 2c. „Tätigkeit“ vervollständigen ----------
+  // Vorschläge: zuletzt selbst eingetragen (max. 20), dann die Tätigkeiten des offenen Tages,
+  // dann die der vorigen Arbeitstage. Chrome filtert die Datalist beim Tippen selbst.
+  const TAET_MAX = 20, TAET_DAYS = 5, TAET_TTL = 6 * 3600 * 1000;
+  function rememberTaetigkeit(v) {
+    v = (v || '').trim();
+    if (!v) return;
+    const list = store.get('taetigkeiten', []).filter((t) => t.toLowerCase() !== v.toLowerCase());
+    list.unshift(v);
+    store.set('taetigkeiten', list.slice(0, TAET_MAX));
+  }
+  // Tätigkeiten der Aufgaben (nicht der Anwesenheit) aus einem Dokument lesen
+  function taetigkeitenIn(root) {
+    return [...root.querySelectorAll('.bubble.workinghours__dialog input.taetigkeit')]
+      .filter((i) => { const z = i.closest('.bubble').querySelector('input.zugehoerigkeit'); return !z || z.value !== 'FZ'; })
+      .map((i) => (i.getAttribute('value') || '').trim())
+      .filter(Boolean);
+  }
+  // vorige Arbeitstage still nachladen (nur lesen) und kurz zwischenspeichern
+  const taetFetching = new Set();
+  function previousDays(dayStart) {
+    const days = [];
+    const d = startOfDay(dayStart);
+    while (days.length < TAET_DAYS) {
+      d.setDate(d.getDate() - 1);
+      if (d.getDay() !== 0 && d.getDay() !== 6) days.push(new Date(d));
+    }
+    return days;
+  }
+  function loadDay(d) {
+    const key = 'taet-' + isoDate(d);
+    const c = store.get(key, null);
+    if (c && Date.now() - c.t < TAET_TTL) return c.vals;
+    const url = weekUrl(d);
+    if (url && !taetFetching.has(key)) {
+      taetFetching.add(key);
+      fetch(url + '/arbeitszeiten/' + isoDate(d), { credentials: 'same-origin' })
+        .then((r) => (r.ok ? r.text() : null))
+        .then((html) => {
+          if (html === null) return;
+          store.set(key, { t: Date.now(), vals: taetigkeitenIn(new DOMParser().parseFromString(html, 'text/html')) });
+          schedule();
+        })
+        .catch(() => {})
+        .finally(() => taetFetching.delete(key));
+    }
+    return c ? c.vals : [];
+  }
+  function ensureTaetigkeit() {
+    const inputs = [...document.querySelectorAll('.bubble.workinghours__dialog input.taetigkeit')];
+    if (!inputs.length) return;
+    let dl = document.getElementById('cbp-taetigkeiten');
+    if (!dl) {
+      dl = document.createElement('datalist');
+      dl.id = 'cbp-taetigkeiten';
+      document.body.appendChild(dl);
+    }
+    const seen = new Set();
+    const vals = [];
+    const add = (v) => { v = (v || '').trim(); const k = v.toLowerCase(); if (v && !seen.has(k)) { seen.add(k); vals.push(v); } };
+    store.get('taetigkeiten', []).forEach(add);
+    taetigkeitenIn(document).forEach(add);
+    const table = document.querySelector('.workinghours__content table[data-zeitraumvon]');
+    const g = table && table.__cbpGrid;
+    if (g) previousDays(g.dayStart).forEach((d) => loadDay(d).forEach(add));
+    const html = vals.map((v) => `<option value="${v.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')}"></option>`).join('');
+    if (dl.dataset.html !== html) { dl.innerHTML = html; dl.dataset.html = html; }
+    inputs.forEach((i) => {
+      if (i.getAttribute('list') !== dl.id) i.setAttribute('list', dl.id);
+      if (!i.dataset.cbpTaet) {
+        i.dataset.cbpTaet = '1';
+        i.addEventListener('change', () => rememberTaetigkeit(i.value));
+      }
+    });
   }
 
   // ---------- 3. Aufgaben-Suche ----------
@@ -741,6 +929,7 @@
         });
       });
       document.querySelectorAll('#fremdidauswahl-content').forEach(enhancePicker);
+      ensureTaetigkeit();
       ensureDayButtons();
       ensureSimulation();
       pendingDay();

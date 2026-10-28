@@ -91,23 +91,40 @@ html.cbp-dark {
   scroll-behavior: auto;
 }
 
+/* Bearbeiten-Dialog etwas größer */
+.bubble.workinghours__dialog.cbp-big {
+  width: 480px !important;
+}
+.bubble.workinghours__dialog.cbp-big > .content {
+  zoom: 1.2;
+}
+
 /* Snap-Leiste im Bearbeiten-Dialog */
 .cbp-snap {
-  margin: 10px 0 4px;
-  text-align: left;
+  margin: 8px 0 4px;
   font-size: 12px;
 }
-.cbp-snap-row {
+.cbp-fillrow {
+  text-align: center;
+}
+.cbp-cols {
+  display: grid;
+  grid-template-columns: 1fr 12px 1fr;
+}
+.cbp-cols:not([style]) .cbp-col:last-child { grid-column: 3; }
+.cbp-cols[style] .cbp-col:first-child { grid-column: 2; }
+.cbp-cols[style] .cbp-col:last-child { grid-column: 4; }
+.cbp-col {
   display: flex;
-  flex-wrap: wrap;
+  justify-content: center;
   gap: 4px;
-  align-items: center;
-  margin-bottom: 5px;
+  min-width: 0;
+  white-space: nowrap;
 }
-.cbp-snap-label {
-  width: 42px;
-  color: var(--cbp-soft);
-}
+.cbp-steprow { margin-top: -2px; }
+.cbp-bestrow { margin-top: 14px; }
+.cbp-fillrow { margin: 8px 0 0; }
+.cbp-chip.cbp-step { padding: 1px 7px; }
 .cbp-chip {
   border: 1px solid var(--cbp-line);
   background: var(--cbp-btn);
@@ -119,6 +136,7 @@ html.cbp-dark {
   font-variant-numeric: tabular-nums;
 }
 .cbp-chip:hover { border-color: var(--cbp-accent); }
+.cbp-chip:disabled { opacity: .35; cursor: default; border-color: var(--cbp-line); }
 .cbp-chip.cbp-fill {
   background: var(--cbp-accent);
   color: var(--cbp-accent-ink);
@@ -174,4 +192,16 @@ li.cbp-active > a {
 .cbp-today.cbp-secondary {
   background: transparent;
   color: var(--cbp-ink);
+}
+
+/* wahrscheinlichster Snap-Punkt */
+.cbp-chip.cbp-best {
+  background: var(--cbp-accent-soft);
+  border-color: var(--cbp-accent);
+}
+.cbp-chip.cbp-best small { color: inherit; opacity: .75; }
+
+/* Tätigkeit mit Vorschlagsliste: Pfeil mittig statt auf der Grundlinie */
+.workinghours__dialog input.taetigkeit[list] {
+  line-height: normal !important;
 }
