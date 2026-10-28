@@ -281,6 +281,27 @@
     return isDark() ? '#1b2430' : '#fff';
   }
 
+  // Übersicht (td.stunden.uebersicht) scrollt mit, statt oben kleben zu bleiben.
+  // Innere Balken bleiben positioniert; die seitlich fixierte Namensspalte auch.
+  function releaseOverview(root) {
+    if (!root) return;
+    root.querySelectorAll('td.stunden.uebersicht').forEach((td) => {
+      const nodes = [td, ...td.querySelectorAll('*')];
+      for (let el = td.parentElement; el && el !== root && el !== document.documentElement; el = el.parentElement) {
+        nodes.push(el);
+      }
+      nodes.forEach((el) => {
+        if (el.classList.contains('cbp-sticky')) return;
+        const pos = getComputedStyle(el).position;
+        if (pos !== 'sticky' && pos !== 'fixed') return;
+        const inCell = el === td || td.contains(el);
+        el.style.setProperty('position', inCell ? 'relative' : 'static', 'important');
+        el.style.setProperty('top', 'auto', 'important');
+        el.style.setProperty('bottom', 'auto', 'important');
+      });
+    });
+  }
+
   function applyZoom(table) {
     const scroller = table.parentElement; // div.hours (overflow: auto)
     if (!scroller) return;
@@ -917,6 +938,7 @@
   function run() {
     try {
       document.documentElement.classList.toggle('cbp-dark', isDark());
+      document.querySelectorAll('.workinghours__content').forEach(releaseOverview);
       document.querySelectorAll('table[data-zeitraumvon]').forEach((table) => {
         if (!table.closest('.workinghours__content')) return;
         const g = readGrid(table);
