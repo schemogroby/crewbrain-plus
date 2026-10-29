@@ -16,7 +16,9 @@ Chrome-Erweiterung für eine schnellere Zeiterfassung in CrewBrain. Sie ändert 
 
 ## Installation
 
-**Chrome Web Store:** Version 1.0.0 ist eingereicht und in Prüfung (Stand 27.10.2026). Nach der Freigabe folgt hier der Link, Updates kommen dann automatisch. Bis dahin funktioniert die Installation als entpackte Erweiterung:
+**Chrome Web Store (empfohlen):** [Zeiterfassung Plus für CrewBrain](https://chromewebstore.google.com/detail/oimlichfpplklekbcadpbijahphhgbjn) öffnen, **Hinzufügen** klicken und CrewBrain neu laden. Die Erweiterung ist nicht gelistet, man findet sie also nur über diesen Link. Updates kommen automatisch.
+
+**Alternativ als entpackte Erweiterung**, z. B. um eine neue Version vor der Store-Freigabe zu nutzen:
 
 1. Repo herunterladen: `git clone …` oder auf GitHub **Code → Download ZIP** und das ZIP entpacken.
 2. In Chrome `chrome://extensions` öffnen.
@@ -24,9 +26,15 @@ Chrome-Erweiterung für eine schnellere Zeiterfassung in CrewBrain. Sie ändert 
 4. **Entpackte Erweiterung laden** klicken und den Ordner `crewbrain-plus` wählen.
 5. CrewBrain neu laden.
 
+Store-Version und entpackte Version nicht gleichzeitig aktivieren, sonst läuft alles doppelt.
+
 Optional als eigene App im Dock: In CrewBrain ⋮ → Streamen, speichern und teilen → **Seite als App installieren**. Die Erweiterung läuft auch dort.
 
 ## Updates
+
+Aus dem Store: automatisch, nichts zu tun.
+
+Entpackt:
 
 ```bash
 git pull
