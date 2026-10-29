@@ -432,15 +432,24 @@
     }
     const curFrom = self ? self.from : parseTime(vonInp.value);
     const curTo = self ? self.to : parseTime(bisInp.value);
-    const pts = boundaries(g, self);
+    // bei Unabhängigen Zeiten die eigene Anwesenheit/Pause nicht als Bezugspunkt nehmen
+    const others = self && self.fz ? g.fz.filter((b) => b !== self) : null;
+    const pts = boundaries(others ? { ...g,
+      work: union(others.filter((b) => !b.pause)),
+      pauses: union(others.filter((b) => b.pause)) } : g, self);
     const startList = pts.filter((p) => curTo === null || p.m < curTo);
     const endList = pts.filter((p) => curFrom === null || p.m > curFrom);
     // wahrscheinlichster Start: letzter Punkt vor dem Ende, ab dem wieder frei ist (Ende des vorigen Jobs, Pausen-Ende, Anwesenheitsbeginn)
     // wahrscheinlichstes Ende: erster Punkt nach dem Start, ab dem belegt ist (Start des nächsten Jobs, Pause, Anwesenheitsende)
-    const bestStart = startList.filter((p) => p.open).pop() || null;
-    const bestEnd = endList.find((p) => p.close) || null;
+    // eine Pause liegt zwischen den Blöcken: Start am vorigen, Ende am nächsten Punkt egal welcher Richtung (z. B. nächster Anwesenheits-Block)
+    const isPause = self && self.pause;
+    const bestStart = startList.filter((p) => isPause || p.open).pop() || null;
+    const bestEnd = endList.find((p) => isPause || p.close) || null;
+    const label = (attr, p) => isPause
+      ? (attr === 'von' ? p.close || p.open : p.open || p.close)
+      : (attr === 'von' ? p.open : p.close);
     const best = (attr, p) => p
-      ? `<button type="button" class="cbp-chip cbp-best" data-${attr}="${p.m}">${fmt(p.m)}<small>${attr === 'von' ? p.open : p.close}</small></button>`
+      ? `<button type="button" class="cbp-chip cbp-best" data-${attr}="${p.m}">${fmt(p.m)}<small>${label(attr, p)}</small></button>`
       : '';
     // ±15 rastet auf die nächste Viertelstunde ein (13:07 → 13:15 bzw. 13:00)
     const step = (attr, cur, d) => {
