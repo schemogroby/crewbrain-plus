@@ -15,12 +15,15 @@ Inoffizielle Helfer für die CrewBrain-Zeiterfassung: Anwesenheit im Raster, Zoo
 Zeiterfassung Plus macht die tägliche Zeiterfassung in CrewBrain schneller und übersichtlicher.
 
 • Anwesenheit im Blick: In der Tagesansicht liegen Anwesenheit (grün), Pausen (rot) und noch nicht verbuchte Zeit (orange) direkt hinter allen Aufgaben-Zeilen. Eine Zusammenfassung zeigt Anwesenheit, Pause, verbuchte Zeit und offene Lücken.
-• Zoom: Auf 6–18 Uhr, auf die eigene Anwesenheit oder auf den ganzen Tag. Seitlich scrollen, die Namensspalte bleibt stehen.
-• Bündig setzen: Im Bearbeiten-Dialog Start und Ende mit einem Klick an Anwesenheitsbeginn, Pausen oder den vorherigen und nächsten Job anlegen. „Lücke füllen“ setzt einen Job genau in die freie Zeit.
-• Bessere Aufgabensuche: Wortteile in beliebiger Reihenfolge über Event, Bereich und Aufgabe, zum Beispiel „arena meet“. Bedienung per Tastatur, zuletzt genutzte Aufgaben als Schnellauswahl.
-• „Heute erfassen“: öffnet das Raster für den heutigen Tag mit einem Klick.
+• Zoom: 6–20 Uhr, die eigene Anwesenheit oder der ganze Tag, dazu − / +. Seitlich scrollen, die Namensspalte bleibt stehen.
+• Bündig setzen: Der Bearbeiten-Dialog schlägt den passenden Start und das passende Ende vor, etwa das Ende des vorigen Jobs, das Pausen-Ende oder den Start des nächsten Jobs. −15 / +15 rasten auf die Viertelstunde ein, „Lücke füllen“ setzt einen Job genau in die freie Zeit.
+• Pausen und Anwesenheit: Bei unabhängigen Zeiten wird die Lücke zwischen den Blöcken vorgeschlagen, zum Beispiel eine Pause vom Ende des Vormittags bis zum Beginn des Nachmittags.
+• Neuer Balken bündig: Ein Klick ins Raster legt den neuen Job direkt an den vorigen an und endet am Start des nächsten oder am Ende der Anwesenheit.
+• Tätigkeit vervollständigen: Das Feld „Tätigkeit“ schlägt die letzten Einträge und die Tätigkeiten der Vortage vor. Beim Tippen wird die Liste kürzer.
+• Bessere Aufgabensuche: Wortteile in beliebiger Reihenfolge über Event, Bereich und Aufgabe, zum Beispiel „arena meet“. Auch Aufgaben, die CrewBrain nicht in der Startliste zeigt, werden gefunden. Bedienung per Tastatur, zuletzt genutzte Aufgaben als Schnellauswahl.
+• „Heute erfassen“ und „Gestern erfassen“: öffnen das Raster für heute bzw. den letzten Arbeitstag mit einem Klick.
 
-Die Erweiterung ändert nur die Darstellung. Gespeichert wird weiterhin ausschließlich über die Schaltflächen von CrewBrain. Es werden keine Daten gesammelt oder übertragen.
+Die Erweiterung ändert nur die Darstellung. Gespeichert wird weiterhin ausschließlich über die Schaltflächen von CrewBrain. Es werden keine Daten gesammelt oder an Dritte übertragen.
 
 Inoffizielles Hilfsprogramm, nicht mit dem Anbieter von CrewBrain verbunden.
 ```
@@ -30,7 +33,7 @@ Inoffizielles Hilfsprogramm, nicht mit dem Anbieter von CrewBrain verbunden.
 
 **Grafiken:**
 - Store-Symbol 128 × 128: `icons/icon128.png`
-- Screenshots 1280 × 800: `store/screenshot-*.png`
+- Screenshots 1280 × 800: `store/screenshot-1-raster.png` bis `store/screenshot-5-neu.png` (Raster, Dialog, Tätigkeit, Aufgabensuche, neuer Balken)
 - Kleine Werbekachel 440 × 280: `store/promo-440x280.png`
 
 ## Datenschutz (Tab „Datenschutz“)
