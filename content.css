@@ -86,6 +86,19 @@ html.cbp-dark {
   z-index: 20 !important;
   box-shadow: 1px 0 0 var(--cbp-sticky-edge);
 }
+/* Tagesübersicht klebt sonst oben fest und verdeckt das Raster */
+.workinghours__content td.stunden.uebersicht {
+  position: relative !important;
+  top: auto !important;
+  bottom: auto !important;
+}
+.workinghours__content tr:has(> td.stunden.uebersicht),
+.workinghours__content thead:has(td.stunden.uebersicht),
+.workinghours__content tfoot:has(td.stunden.uebersicht) {
+  position: static !important;
+  top: auto !important;
+  bottom: auto !important;
+}
 .cbp-scroller {
   overflow-x: auto;
   scroll-behavior: auto;
