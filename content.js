@@ -441,13 +441,23 @@
     const endList = pts.filter((p) => curFrom === null || p.m > curFrom);
     // wahrscheinlichster Start: letzter Punkt vor dem Ende, ab dem wieder frei ist (Ende des vorigen Jobs, Pausen-Ende, Anwesenheitsbeginn)
     // wahrscheinlichstes Ende: erster Punkt nach dem Start, ab dem belegt ist (Start des nächsten Jobs, Pause, Anwesenheitsende)
-    // eine Pause liegt zwischen den Blöcken: Start am vorigen, Ende am nächsten Punkt egal welcher Richtung (z. B. nächster Anwesenheits-Block)
-    const isPause = self && self.pause;
-    const bestStart = startList.filter((p) => isPause || p.open).pop() || null;
-    const bestEnd = endList.find((p) => isPause || p.close) || null;
-    const label = (attr, p) => isPause
-      ? (attr === 'von' ? p.close || p.open : p.open || p.close)
-      : (attr === 'von' ? p.open : p.close);
+    let bestStart = startList.filter((p) => p.open).pop() || null;
+    let bestEnd = endList.find((p) => p.close) || null;
+    let label = (attr, p) => (attr === 'von' ? p.open : p.close);
+    // Unabhängige Zeiten reihen sich aneinander: die Lücke zwischen den anderen Blöcken füllen,
+    // z. B. Pause vom Ende des Vormittags bis zum Beginn des Nachmittags
+    if (others && curFrom !== null) {
+      const to = curTo === null ? curFrom + 1 : curTo;
+      const ov = (f) => Math.min(f.to, to) - Math.max(f.from, curFrom);
+      const seg = subtract([{ from: 0, to: 1440 }], union(others))
+        .filter((f) => ov(f) > 0 || (f.from <= curFrom && curFrom < f.to))
+        .sort((a, b) => ov(b) - ov(a))[0];
+      if (seg) {
+        bestStart = pts.find((p) => p.m === seg.from) || null;
+        bestEnd = pts.find((p) => p.m === seg.to) || null;
+        label = (attr, p) => (attr === 'von' ? p.close || p.open : p.open || p.close);
+      }
+    }
     const best = (attr, p) => p
       ? `<button type="button" class="cbp-chip cbp-best" data-${attr}="${p.m}">${fmt(p.m)}<small>${label(attr, p)}</small></button>`
       : '';
