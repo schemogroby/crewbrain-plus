@@ -1,0 +1,45 @@
+name: Release
+
+# Legt beim Merge auf main ein GitHub-Release zur Version aus manifest.json an.
+# Läuft nur im Original-Repo, damit ein Fork kein zweites Release erzeugt.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - manifest.json
+      - release-notes/**
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    if: github.repository == 'schemogroby/crewbrain-plus'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Stand auschecken
+        uses: actions/checkout@v4
+
+      - name: GitHub-Release zur Manifest-Version anlegen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version=$(jq -r .version manifest.json)
+          tag="v${version}"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release ${tag} gibt es schon."
+            exit 0
+          fi
+          notes_file="release-notes/${version}.md"
+          if [ -f "$notes_file" ]; then
+            notes=$(cat "$notes_file")
+          else
+            notes=$(git log --no-merges -1 --format='%s' -- manifest.json)
+          fi
+          gh release create "$tag" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "$version" \
+            --notes "$notes" \
+            --target "$GITHUB_SHA"
