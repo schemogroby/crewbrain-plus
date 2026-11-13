@@ -1,6 +1,6 @@
 # Datenschutzerklärung – Zeiterfassung Plus für CrewBrain
 
-Stand: 27.10.2026
+Stand: 13.11.2026
 
 **Kurz gesagt: Die Erweiterung erhebt, speichert und überträgt keine personenbezogenen Daten.**
 
@@ -14,7 +14,8 @@ Lokal im Browser (`localStorage` der CrewBrain-Seite) liegen nur diese Einstellu
 
 - die gewählte Zoomstufe,
 - ob das Overlay an- oder ausgeschaltet ist,
-- die Namen der zuletzt gewählten Aufgaben, für die Schnellauswahl.
+- die Namen der zuletzt gewählten Aufgaben, für die Schnellauswahl,
+- die zuletzt gewählte Arbeitszeitkategorie für neue Einträge, getrennt für Aufgaben und unabhängige Zeiten.
 
 Diese Daten verlassen den Browser nicht.
 

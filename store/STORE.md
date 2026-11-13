@@ -19,6 +19,7 @@ Zeiterfassung Plus macht die tägliche Zeiterfassung in CrewBrain schneller und 
 • Bündig setzen: Der Bearbeiten-Dialog schlägt den passenden Start und das passende Ende vor, etwa das Ende des vorigen Jobs, das Pausen-Ende oder den Start des nächsten Jobs. −15 / +15 rasten auf die Viertelstunde ein, „Lücke füllen“ setzt einen Job genau in die freie Zeit.
 • Pausen und Anwesenheit: Bei unabhängigen Zeiten wird die Lücke zwischen den Blöcken vorgeschlagen, zum Beispiel eine Pause vom Ende des Vormittags bis zum Beginn des Nachmittags.
 • Neuer Balken bündig: Ein Klick ins Raster legt den neuen Job direkt an den vorigen an und endet am Start des nächsten oder am Ende der Anwesenheit.
+• Kategorie merken: Die zuletzt gewählte Arbeitszeitkategorie, zum Beispiel „Arbeitszeit mobil“, ist beim nächsten neuen Eintrag vorausgewählt.
 • Tätigkeit vervollständigen: Das Feld „Tätigkeit“ schlägt die letzten Einträge und die Tätigkeiten der Vortage vor. Beim Tippen wird die Liste kürzer.
 • Bessere Aufgabensuche: Wortteile in beliebiger Reihenfolge über Event, Bereich und Aufgabe, zum Beispiel „arena meet“. Auch Aufgaben, die CrewBrain nicht in der Startliste zeigt, werden gefunden. Bedienung per Tastatur, zuletzt genutzte Aufgaben als Schnellauswahl.
 • „Heute erfassen“ und „Gestern erfassen“: öffnen das Raster für heute bzw. den letzten Arbeitstag mit einem Klick.
