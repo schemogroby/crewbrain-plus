@@ -1,6 +1,6 @@
 // Zeiterfassung Plus – Ergänzungen für die Zeiterfassung (nur Oberfläche, speichert nichts selbst).
 // 1. Raster: Anwesenheit/Pausen/Lücken als Hintergrund in allen Aufgaben-Zeilen + Zusammenfassung
-// 2. Bearbeiten-Dialog: Start/Ende per Klick bündig setzen, „Lücke füllen“
+// 2. Bearbeiten-Dialog: Start/Ende per Klick bündig setzen, „Lücke füllen“, Kategorie merken
 // 3. Aufgaben-Dialog: Suche über Event + Aufgabe, Wortteile in beliebiger Reihenfolge, Tastatur, zuletzt genutzt
 // 4. Wochenansicht: Button „Heute erfassen“
 (() => {
@@ -569,6 +569,120 @@
     if (a) applyGhost(a, true);
   }, true);
 
+  // ---------- 2d. Kategorie beim nächsten neuen Eintrag vorauswählen ----------
+  // Ein Klick auf „Neu…“ öffnet einen frischen Dialog. Dort steht wieder die Kategorie,
+  // die zuletzt im Dialog gewählt wurde (z. B. „Arbeitszeit mobil“). Aufgaben und
+  // unabhängige Zeiten (Pause, Fahrt, …) merken sich die Auswahl getrennt.
+  const cleanLabel = (s) => (s || '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+  function kategorieKey(bubble) {
+    const z = bubble.querySelector('input.zugehoerigkeit');
+    if (z && z.value) return z.value === 'FZ' ? 'kategorie-fz' : 'kategorie';
+    return bubble.dataset.cbpKatFz === '1' ? 'kategorie-fz' : 'kategorie';
+  }
+  function rememberKategorie(sel) {
+    const bubble = sel.closest('.bubble.workinghours__dialog');
+    const opt = sel.selectedOptions[0];
+    if (!bubble || !opt) return;
+    const text = cleanLabel(opt.textContent);
+    if (!text) return;
+    store.set(kategorieKey(bubble), { value: opt.value, text });
+  }
+  function findKategorieOption(sel, saved) {
+    if (!saved) return null;
+    const opts = [...sel.options];
+    if (saved.value != null && String(saved.value) !== '') {
+      const byVal = opts.find((o) => o.value === String(saved.value));
+      if (byVal) return byVal;
+    }
+    const text = cleanLabel(saved.text).toLowerCase();
+    return text ? opts.find((o) => cleanLabel(o.textContent).toLowerCase() === text) || null : null;
+  }
+  let pendingNew = null;
+  document.addEventListener('click', (e) => {
+    const t = e.target;
+    if (!t || !t.closest) return;
+    const a = t.closest('.workinghours__content table div.neu > a');
+    if (!a) return;
+    const td = a.closest('td.stunden');
+    pendingNew = {
+      until: Date.now() + 5000,
+      open: new Set(document.querySelectorAll('.bubble.workinghours__dialog.opened')),
+      fz: !!(td && td.dataset.zugehoerigkeit === 'FZ'),
+    };
+  }, true);
+  document.addEventListener('change', (e) => {
+    const sel = e.target;
+    if (!sel || !sel.matches || !sel.matches('select.kategorie')) return;
+    if (!e.isTrusted || sel.dataset.cbpKatApplying === '1') return;
+    sel.dataset.cbpKatUser = '1';
+    rememberKategorie(sel);
+  }, true);
+  // „Zeit ändern“ übernimmt die Kategorie auch dann, wenn die Auswahl nicht als
+  // Nutzer-Event ankam. Den CrewBrain-Default nicht über eine schon gemerkte Kategorie schreiben.
+  document.addEventListener('click', (e) => {
+    const t = e.target;
+    if (!t || !t.closest) return;
+    const btn = t.closest('.bubble.workinghours__dialog button, .bubble.workinghours__dialog input[type="button"], .bubble.workinghours__dialog input[type="submit"], .bubble.workinghours__dialog a');
+    if (!btn || !/Zeit ändern/.test(cleanLabel(btn.value || btn.textContent || ''))) return;
+    const bubble = btn.closest('.bubble.workinghours__dialog');
+    if (!bubble || bubble.dataset.cbpKatArmed !== '1') return;
+    const sel = bubble.querySelector('select.kategorie');
+    if (!sel) return;
+    const saved = store.get(kategorieKey(bubble), null);
+    const remembered = findKategorieOption(sel, saved);
+    if (saved && sel.dataset.cbpKatUser !== '1' && remembered && !remembered.selected) return;
+    rememberKategorie(sel);
+  }, true);
+  function settleKategorie(bubble) {
+    const sel = bubble.querySelector('select.kategorie');
+    if (!sel || sel.dataset.cbpKatUser === '1') return;
+    const opt = findKategorieOption(sel, store.get(kategorieKey(bubble), null));
+    if (!opt || opt.selected) return;
+    if (+(sel.dataset.cbpKatTries || 0) >= 5) return;
+    sel.dataset.cbpKatTries = String(+(sel.dataset.cbpKatTries || 0) + 1);
+    sel.dataset.cbpKatApplying = '1';
+    for (const o of sel.options) o.selected = o === opt;
+    sel.value = opt.value;
+    sel.dispatchEvent(new Event('input', { bubbles: true }));
+    sel.dispatchEvent(new Event('change', { bubbles: true }));
+    delete sel.dataset.cbpKatApplying;
+  }
+  function ensureKategorie() {
+    if (pendingNew && Date.now() > pendingNew.until) pendingNew = null;
+    const bubbles = [...document.querySelectorAll('.bubble.workinghours__dialog')];
+    const just = [];
+    for (const bubble of bubbles) {
+      const open = bubble.classList.contains('opened');
+      const justOpened = open && bubble.dataset.cbpKatOpen !== '1';
+      if (open) bubble.dataset.cbpKatOpen = '1';
+      else {
+        delete bubble.dataset.cbpKatOpen;
+        delete bubble.dataset.cbpKatArmed;
+        delete bubble.dataset.cbpKatUntil;
+      }
+      if (justOpened && pendingNew && !pendingNew.open.has(bubble)) just.push(bubble);
+    }
+    if (pendingNew && just.length) {
+      const bubble = just[0];
+      const fz = pendingNew.fz;
+      pendingNew = null;
+      bubble.dataset.cbpKatArmed = '1';
+      bubble.dataset.cbpKatFz = fz ? '1' : '0';
+      bubble.dataset.cbpKatUntil = String(Date.now() + 2500);
+      const sel = bubble.querySelector('select.kategorie');
+      if (sel) {
+        delete sel.dataset.cbpKatUser;
+        delete sel.dataset.cbpKatTries;
+      }
+      [80, 250, 700, 1500].forEach((ms) => setTimeout(ensureKategorie, ms));
+    }
+    for (const bubble of bubbles) {
+      if (!bubble.classList.contains('opened') || bubble.dataset.cbpKatArmed !== '1') continue;
+      if (Date.now() >= +(bubble.dataset.cbpKatUntil || 0)) continue;
+      settleKategorie(bubble);
+    }
+  }
+
   // ---------- 2c. „Tätigkeit“ vervollständigen ----------
   // Vorschläge: zuletzt selbst eingetragen (max. 20), dann die Tätigkeiten des offenen Tages,
   // dann die der vorigen Arbeitstage. Chrome filtert die Datalist beim Tippen selbst.
@@ -971,6 +1085,7 @@
       });
       document.querySelectorAll('#fremdidauswahl-content').forEach(enhancePicker);
       ensureTaetigkeit();
+      ensureKategorie();
       ensureDayButtons();
       ensureSimulation();
       pendingDay();

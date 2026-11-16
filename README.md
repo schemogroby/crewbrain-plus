@@ -9,6 +9,7 @@ Chrome-Erweiterung für eine schnellere Zeiterfassung in CrewBrain. Sie ändert 
 - **Bündig setzen:** Der Dialog eines Balkens ist etwas größer. Unter Start und Ende steht jeweils der wahrscheinlichste Zeitpunkt (Start: Ende des vorigen Jobs, Pausen-Ende oder Anwesenheitsbeginn; Ende: Start des nächsten Jobs, Pause oder Anwesenheitsende) sowie −15 / +15, die auf die Viertelstunde einrasten. Darüber „Lücke füllen“. Bei Unabhängigen Zeiten wird die Lücke zwischen den Nachbarblöcken vorgeschlagen, z. B. eine Pause vom Ende des Vormittags bis zum Beginn des Nachmittags oder die Anwesenheit ab dem Pausen-Ende.
 - **Tätigkeit vervollständigen:** Das Feld „Tätigkeit“ schlägt deine letzten 20 Einträge vor, dazu die Tätigkeiten des offenen Tages und der fünf Arbeitstage davor. Beim Tippen grenzt sich die Liste ein.
 - **Neuer Balken bündig:** Klickst du in eine Aufgaben-Zeile, legt CrewBrain eine volle Stunde an. Ragt die Stunde über Anwesenheitsbeginn, -ende, eine Pause oder einen schon eingetragenen Job hinaus, wird sie dort gekappt, schon in der Vorschau „Neu…“. Der neue Job schließt also direkt an den vorigen an und endet am Start des nächsten.
+- **Kategorie merken:** Die Arbeitszeitkategorie aus dem Dialog (z. B. „Arbeitszeit mobil“) ist beim nächsten neuen Eintrag schon vorausgewählt. Aufgaben und unabhängige Zeiten merken sich die Kategorie getrennt.
 - **Aufgabensuche:** Wortteile in beliebiger Reihenfolge über Event, Bereich und Aufgabe, zum Beispiel `arena meet`. ↑↓ wählen aus, Enter übernimmt, zuletzt genutzte Aufgaben stehen als Knöpfe darüber. Aufgaben, die CrewBrain nicht in der Startliste zeigt (z. B. „… / Kommunikation & Grafik / KV“), werden im Hintergrund mitgesucht und erscheinen unter „Weitere Treffer“. Dafür muss mindestens ein Suchwort im letzten Teil des Namens stehen: `nature kv` findet „NATURE ONE / … / KV“, `nature grafik` nur den Bereich „NATURE ONE / Kommunikation & Grafik“.
 - **„Heute erfassen“ / „Gestern erfassen“:** Die Knöpfe in der Zeiterfassung öffnen das Raster für heute bzw. den letzten Arbeitstag (montags heißt der Knopf „Freitag erfassen“), auch wenn der Tag in der Vorwoche liegt. Oben muss dafür dein eigener Name ausgewählt sein.
 - **„Zukünftige Tage simulieren“** wird automatisch eingeschaltet. Schaltest du es selbst aus, bleibt es in diesem Tab aus.
@@ -45,5 +46,5 @@ Danach in `chrome://extensions` bei „Zeiterfassung Plus für CrewBrain“ auf 
 ## Hinweise
 
 - Die Erweiterung läuft nur auf `*.crewbrain.com`.
-- Einstellungen wie Zoom, Overlay und zuletzt genutzte Aufgaben liegen im Browser, pro Person.
+- Einstellungen wie Zoom, Overlay, zuletzt genutzte Aufgaben und die zuletzt gewählte Arbeitszeitkategorie liegen im Browser, pro Person.
 - Baut CrewBrain seine Oberfläche um, kann eine Funktion ausfallen. CrewBrain selbst funktioniert dann trotzdem normal weiter.
