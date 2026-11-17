@@ -218,3 +218,85 @@ li.cbp-active > a {
 .workinghours__dialog input.taetigkeit[list] {
   line-height: normal !important;
 }
+
+/* Auf Aufgaben aufteilen */
+.cbp-chip.cbp-on {
+  background: var(--cbp-accent-soft);
+  border-color: var(--cbp-accent);
+}
+.cbp-split {
+  margin: 8px 0 4px;
+  padding: 8px;
+  border: 1px solid var(--cbp-line);
+  border-radius: 6px;
+  font-size: 12px;
+}
+.cbp-shead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+.cbp-shead .cbp-eq { margin-left: auto; }
+.cbp-srow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 46px 12px 76px;
+  gap: 4px;
+  align-items: center;
+  margin: 3px 0;
+}
+.cbp-sname {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cbp-srow select {
+  width: 100%;
+  min-width: 0;
+  font-size: 12px;
+}
+.cbp-pct {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 12px;
+  text-align: right;
+}
+.cbp-t {
+  color: var(--cbp-soft);
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.cbp-split-msg {
+  margin: 4px 0;
+  color: var(--cbp-active-line);
+}
+.cbp-split-msg:empty { display: none; }
+.cbp-sfoot {
+  margin-top: 6px;
+  text-align: center;
+}
+.cbp-snote {
+  margin-top: 6px;
+  color: var(--cbp-soft);
+  font-size: 11px;
+  text-align: center;
+}
+.cbp-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 100000;
+  max-width: 80vw;
+  padding: 10px 16px;
+  border: 1px solid var(--cbp-accent);
+  border-radius: 8px;
+  background: var(--cbp-btn);
+  color: var(--cbp-ink);
+  font-size: 14px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .3);
+  cursor: pointer;
+}
+.cbp-toast.cbp-err { border-color: var(--cbp-active-line); }

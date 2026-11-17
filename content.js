@@ -1,6 +1,6 @@
 // Zeiterfassung Plus – Ergänzungen für die Zeiterfassung (nur Oberfläche, speichert nichts selbst).
 // 1. Raster: Anwesenheit/Pausen/Lücken als Hintergrund in allen Aufgaben-Zeilen + Zusammenfassung
-// 2. Bearbeiten-Dialog: Start/Ende per Klick bündig setzen, „Lücke füllen“, Kategorie merken
+// 2. Bearbeiten-Dialog: Start/Ende per Klick bündig setzen, „Lücke füllen“, Kategorie merken, auf Aufgaben aufteilen
 // 3. Aufgaben-Dialog: Suche über Event + Aufgabe, Wortteile in beliebiger Reihenfolge, Tastatur, zuletzt genutzt
 // 4. Wochenansicht: Button „Heute erfassen“
 (() => {
@@ -417,6 +417,7 @@
         if (!chip) return;
         e.preventDefault();
         e.stopPropagation();
+        if (chip.classList.contains('cbp-split-toggle')) { toggleSplit(bubble); return; }
         const oldVon = parseTime(vonInp.value), oldBis = parseTime(bisInp.value);
         if (chip.dataset.von) {
           setTime(vonInp, +chip.dataset.von);
@@ -482,7 +483,16 @@
     if (fill && (fill.from !== curFrom || fill.to !== curTo)) {
       html += `<div class="cbp-fillrow"><button type="button" class="cbp-chip cbp-fill" data-von="${fill.from}" data-bis="${fill.to}">Lücke füllen<small>${fmt(fill.from)}–${fmt(fill.to)}</small></button></div>`;
     }
+    if (self && !self.fz && splitTargets(table, bubble).length) {
+      const open = !!bubble.querySelector('.cbp-split');
+      html += `<div class="cbp-fillrow"><button type="button" class="cbp-chip cbp-split-toggle${open ? ' cbp-on' : ''}">Auf Aufgaben aufteilen</button></div>`;
+    }
     if (box.dataset.html !== html) { box.innerHTML = html; box.dataset.html = html; }
+    const panel = bubble.querySelector('.cbp-split');
+    if (panel) {
+      if (self && !self.fz) updateSplit(panel, bubble, table, g);
+      else panel.remove();
+    }
     // ±15 und Vorschläge mittig unter die Datum/Zeit-Felder
     alignCols(box.querySelector('.cbp-steprow'), vonInp.parentElement, bisInp.parentElement);
     alignCols(box.querySelector('.cbp-bestrow'), vonInp.parentElement, bisInp.parentElement);
@@ -517,6 +527,345 @@
       const top = Math.max(8, r.top - down);
       bubble.style.top = top + 'px';
       bubble.style.maxHeight = `calc(100vh - ${top + 8}px)`;
+    }
+  }
+
+  // ---------- 2e. Auf mehrere Aufgaben aufteilen ----------
+  // Teilt einen Eintrag hintereinander auf 2–4 Aufgaben auf (gleiche Teile oder eigene Prozente).
+  // Ablauf wie von Hand: eigenen Eintrag kürzen, in den Zeilen der anderen Aufgaben neue Einträge
+  // anlegen (Tätigkeit und Kategorie übernommen), jeweils „Zeit ändern“. Speichern macht man selbst.
+  const SPLIT_STEP = 5;
+  let splitBusy = false;
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  const rowKey = (td) => td.dataset.zugehoerigkeit + '|' + td.dataset.zugehoerigkeitid;
+  function rowLabel(td) {
+    const tr = td.closest('tr');
+    return tr && tr.children[0] ? cleanLabel(tr.children[0].textContent) : '';
+  }
+  function bubbleKey(bubble) {
+    const z = bubble.querySelector('input.zugehoerigkeit'), id = bubble.querySelector('input.zugehoerigkeitid');
+    return z && id ? z.value + '|' + id.value : '';
+  }
+  // alle Aufgaben-Zeilen im Raster außer der eigenen (ohne Anwesenheit), jede Aufgabe einmal
+  function splitTargets(table, bubble) {
+    const seen = new Set([bubbleKey(bubble)]);
+    const out = [];
+    table.querySelectorAll('td.stunden[data-zugehoerigkeit]').forEach((td) => {
+      if (td.dataset.zugehoerigkeit === 'FZ') return;
+      const k = rowKey(td);
+      if (seen.has(k)) return;
+      seen.add(k);
+      out.push({ key: k, label: rowLabel(td) || k });
+    });
+    return out;
+  }
+  function equalShares(n) {
+    const base = Math.floor(100 / n);
+    return Array.from({ length: n }, (_, i) => (i === n - 1 ? 100 - base * (n - 1) : base));
+  }
+  // Teile hintereinander, Grenzen auf 5 Minuten gerundet; der letzte Teil endet am bisherigen Ende
+  function splitTimes(from, to, shares) {
+    const cuts = [from];
+    let cum = 0;
+    shares.forEach((s, i) => {
+      cum += s;
+      cuts.push(i === shares.length - 1 ? to : from + Math.round((to - from) * cum / 100 / SPLIT_STEP) * SPLIT_STEP);
+    });
+    return shares.map((_, i) => ({ from: cuts[i], to: cuts[i + 1] }));
+  }
+  function splitPlan(panel, bubble, table) {
+    const st = panel.__cbp;
+    const g = table.__cbpGrid;
+    const self = g && g.bars.find((b) => b.bubble === bubble);
+    if (!self) return { error: 'Eintrag nicht im Raster gefunden.' };
+    const dv = bubble.querySelector('input.datum.von'), db = bubble.querySelector('input.datum.bis');
+    if (dv && db && dv.value.trim() !== db.value.trim()) return { self, error: 'Nur Einträge innerhalb eines Tages lassen sich aufteilen.' };
+    const shares = st.shares.slice(0, st.n);
+    const targets = Array.from({ length: st.n - 1 }, (_, i) => st.targets[i] || '');
+    const sum = shares.reduce((a, b) => a + b, 0);
+    const parts = splitTimes(self.from, self.to, shares);
+    let error = '';
+    if (shares.some((s) => !(s > 0))) error = 'Jeder Anteil muss größer als 0 % sein.';
+    else if (sum !== 100) error = `Die Anteile ergeben ${sum} % statt 100 %.`;
+    else if (targets.some((t) => !t)) error = 'Bitte für jeden Teil eine Aufgabe wählen.';
+    else if (new Set(targets).size !== targets.length) error = 'Jede Aufgabe nur einmal wählen.';
+    else if (parts.some((p) => p.to - p.from < SPLIT_STEP)) error = 'Der Eintrag ist zu kurz für diese Aufteilung.';
+    return { self, parts, targets, error };
+  }
+
+  function toggleSplit(bubble) {
+    const old = bubble.querySelector('.cbp-split');
+    if (old) { old.remove(); schedule(); return; }
+    const table = document.querySelector('.workinghours__content table[data-zeitraumvon]');
+    if (table) openSplit(bubble, table, null);
+  }
+  function openSplit(bubble, table, state) {
+    const box = bubble.querySelector('.cbp-snap');
+    if (!box || bubble.querySelector('.cbp-split')) return;
+    const panel = document.createElement('div');
+    panel.className = 'cbp-split';
+    box.parentElement.insertBefore(panel, box.nextSibling);
+    if (state) panel.__cbp = state;
+    else {
+      const avail = new Set(splitTargets(table, bubble).map((o) => o.key));
+      const last = store.get('split-last', []).filter((k) => avail.has(k));
+      const n = Math.max(2, Math.min(4, last.length + 1));
+      panel.__cbp = { n, shares: equalShares(n), targets: last };
+    }
+    panel.addEventListener('click', (e) => {
+      const b = e.target.closest('button');
+      if (!b) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const st = panel.__cbp;
+      if (b.dataset.n) { st.n = +b.dataset.n; st.shares = equalShares(st.n); buildSplit(panel, bubble, table); }
+      else if (b.classList.contains('cbp-eq')) { st.shares = equalShares(st.n); buildSplit(panel, bubble, table); }
+      else if (b.classList.contains('cbp-split-go')) { runSplit(panel, bubble, table); return; }
+      updateSplit(panel, bubble, table);
+    });
+    panel.addEventListener('change', (e) => {
+      const s = e.target.closest('select.cbp-target');
+      if (!s) return;
+      if (s.value === '__search') { startSplitSearch(panel, bubble, table, +s.dataset.i); return; }
+      panel.__cbp.targets[+s.dataset.i - 1] = s.value;
+      updateSplit(panel, bubble, table);
+    });
+    panel.addEventListener('input', (e) => {
+      const inp = e.target.closest('input.cbp-pct');
+      if (!inp) return;
+      const st = panel.__cbp;
+      const i = +inp.dataset.i;
+      st.shares[i] = parseInt(inp.value, 10) || 0;
+      // der letzte Teil nimmt den Rest auf
+      if (i < st.n - 1) {
+        const rest = 100 - st.shares.slice(0, st.n - 1).reduce((a, b) => a + b, 0);
+        if (rest > 0) {
+          st.shares[st.n - 1] = rest;
+          const lastInp = panel.querySelector(`input.cbp-pct[data-i="${st.n - 1}"]`);
+          if (lastInp) lastInp.value = rest;
+        }
+      }
+      updateSplit(panel, bubble, table);
+    });
+    // Enter würde sonst das CrewBrain-Formular abschicken
+    panel.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); } });
+    buildSplit(panel, bubble, table);
+    updateSplit(panel, bubble, table);
+    setTimeout(() => panel.scrollIntoView({ block: 'nearest' }), 50);
+    schedule();
+  }
+
+  function buildSplit(panel, bubble, table) {
+    const st = panel.__cbp;
+    const opts = splitTargets(table, bubble);
+    const g = table.__cbpGrid;
+    const self = g && g.bars.find((b) => b.bubble === bubble);
+    const own = (self && self.label) || 'dieser Eintrag';
+    const pct = (i) => `<input type="number" class="cbp-pct" data-i="${i}" min="1" max="99" step="1" value="${st.shares[i]}"><span>%</span>`;
+    const nBtns = [2, 3, 4].map((n) => `<button type="button" class="cbp-chip${n === st.n ? ' cbp-on' : ''}" data-n="${n}">${n}</button>`).join('');
+    let rows = `<div class="cbp-srow"><span class="cbp-sname" title="${esc(own)}">${esc(own)}</span>${pct(0)}<span class="cbp-t" data-i="0"></span></div>`;
+    for (let i = 1; i < st.n; i++) {
+      const cur = st.targets[i - 1] || '';
+      const o = opts.map((x) => `<option value="${esc(x.key)}"${x.key === cur ? ' selected' : ''}>${esc(x.label)}</option>`).join('');
+      rows += `<div class="cbp-srow"><select class="cbp-target" data-i="${i}"><option value="">Aufgabe wählen …</option>${o}<option value="__search">Alle Aufgaben durchsuchen …</option></select>${pct(i)}<span class="cbp-t" data-i="${i}"></span></div>`;
+    }
+    panel.innerHTML = `<div class="cbp-shead">Aufteilen auf ${nBtns} Aufgaben <button type="button" class="cbp-chip cbp-eq">gleiche Teile</button></div>` +
+      rows +
+      '<div class="cbp-split-msg"></div>' +
+      '<div class="cbp-sfoot"><button type="button" class="cbp-chip cbp-fill cbp-split-go">Aufteilen</button></div>' +
+      '<div class="cbp-snote">Danach wie gewohnt prüfen und speichern.</div>';
+    fitBubble(bubble);
+  }
+
+  function updateSplit(panel, bubble, table) {
+    const st = panel.__cbp;
+    if (!st || st.busy) return;
+    const { parts, error } = splitPlan(panel, bubble, table);
+    panel.querySelectorAll('.cbp-t').forEach((el) => {
+      const p = parts && parts[+el.dataset.i];
+      const t = p ? `${fmt(p.from)}–${fmt(p.to)}` : '';
+      if (el.textContent !== t) el.textContent = t;
+    });
+    const msg = panel.querySelector('.cbp-split-msg');
+    if (msg && msg.textContent !== (error || '')) msg.textContent = error || '';
+    const go = panel.querySelector('.cbp-split-go');
+    if (go) go.disabled = !!error;
+  }
+
+  // „Alle Aufgaben durchsuchen …“: CrewBrains Aufgabenauswahl öffnen (mit der Suche oben).
+  // Die gewählte Aufgabe bekommt dort eine eigene Zeile; CrewBrain baut das Raster dabei neu auf
+  // (ohne zu speichern). Danach den Dialog wieder öffnen und das Aufteilen-Feld mit der Aufgabe füllen.
+  let pendingSplit = null;
+  function startSplitSearch(panel, bubble, table, slot) {
+    const g = table.__cbpGrid;
+    const self = g && g.bars.find((b) => b.bubble === bubble);
+    const inp = document.getElementById('arbeitszeiten-aufgabenauswahl');
+    if (!self || !inp) { toast('Die Aufgabenauswahl von CrewBrain wurde nicht gefunden.', 'err'); return; }
+    const st = panel.__cbp;
+    pendingSplit = {
+      slot, own: bubbleKey(bubble), from: self.from, to: self.to,
+      state: { n: st.n, shares: st.shares.slice(), targets: st.targets.slice() },
+      picked: null, sawPicker: false, clicked: false, until: Date.now() + 180000,
+    };
+    panel.remove();
+    inp.click();
+    inp.focus();
+  }
+  document.addEventListener('click', (e) => {
+    if (!pendingSplit || !e.target.closest) return;
+    const a = e.target.closest('#fremdidauswahl-content a.close[data-fremdid]');
+    if (!a) return;
+    const form = document.querySelector('#fremdidauswahl-content form[data-package="FremdIDAuswahl"]');
+    if (form && form.dataset.mode && form.dataset.mode !== 'aufgaben') return;
+    pendingSplit.picked = 'A|' + a.dataset.fremdid;
+    pendingSplit.pickedAt = Date.now();
+  }, true);
+  function resumeSplit() {
+    const p = pendingSplit;
+    if (!p) return;
+    if (Date.now() > p.until) { pendingSplit = null; return; }
+    setTimeout(schedule, 400); // weiter nachsehen, bis der Dialog wieder offen ist
+    const c = document.getElementById('fremdidauswahl-content');
+    if (c && c.offsetParent) { p.sawPicker = true; return; }
+    if (!p.sawPicker && !p.picked) return; // Auswahl öffnet sich noch
+    const table = document.querySelector('.workinghours__content table[data-zeitraumvon]');
+    const g = table && table.__cbpGrid;
+    if (!g) return;
+    if (p.picked) {
+      const [z, id] = p.picked.split('|');
+      if (!table.querySelector(`td.stunden[data-zugehoerigkeit="${z}"][data-zugehoerigkeitid="${id}"]`)) {
+        if (Date.now() - p.pickedAt < 8000) return; // Raster wird noch neu aufgebaut
+        p.picked = null;
+      }
+    }
+    const bar = g.bars.find((b) => !b.fz && rowKey(b.a.closest('td')) === p.own && b.from === p.from && b.to === p.to);
+    if (!bar) { pendingSplit = null; return; }
+    if (!bar.bubble.classList.contains('opened')) {
+      if (!p.clicked) { p.clicked = true; bar.a.click(); }
+      return;
+    }
+    if (!bar.bubble.querySelector('.cbp-snap')) return;
+    pendingSplit = null;
+    if (p.picked && p.picked !== p.own) p.state.targets[p.slot - 1] = p.picked;
+    openSplit(bar.bubble, table, p.state);
+  }
+
+  function toast(text, kind) {
+    let t = document.querySelector('.cbp-toast');
+    if (!t) {
+      t = document.createElement('div');
+      t.addEventListener('click', () => t.remove());
+      document.body.appendChild(t);
+    }
+    t.className = 'cbp-toast' + (kind ? ' cbp-' + kind : '');
+    t.textContent = text;
+    clearTimeout(t.__cbpT);
+    if (kind === 'ok') t.__cbpT = setTimeout(() => t.remove(), 5000);
+  }
+  function setVal(inp, v) {
+    inp.value = v;
+    inp.dispatchEvent(new Event('input', { bubbles: true }));
+    inp.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+  async function fillBubble(b, part, extra) {
+    const von = b.querySelector('input.zeit.von'), bis = b.querySelector('input.zeit.bis');
+    if (!von || !bis) throw new Error('Zeitfelder nicht gefunden.');
+    if (extra) {
+      const dv = b.querySelector('input.datum.von'), db = b.querySelector('input.datum.bis');
+      if (dv && extra.datumVon) setVal(dv, extra.datumVon);
+      if (db && extra.datumBis) setVal(db, extra.datumBis);
+      const t = b.querySelector('input.taetigkeit');
+      if (t) setVal(t, extra.taet || '');
+      const s = b.querySelector('select.kategorie');
+      if (s && extra.kat != null && [...s.options].some((o) => o.value === extra.kat)) {
+        s.dataset.cbpKatUser = '1';
+        s.dataset.cbpKatApplying = '1';
+        setVal(s, extra.kat);
+        delete s.dataset.cbpKatApplying;
+      }
+    }
+    // CrewBrain zieht beim Ändern des Starts evtl. das Ende mit – deshalb prüfen und notfalls wiederholen
+    for (let k = 0; k < 3; k++) {
+      setTime(von, part.from);
+      setTime(bis, part.to);
+      await sleep(60);
+      if (parseTime(von.value) === part.from && parseTime(bis.value) === part.to) return;
+    }
+    throw new Error('Zeiten ließen sich nicht setzen.');
+  }
+  async function closeBubble(b) {
+    const btn = b.querySelector('a.button.green.close:not(.teilzeit)');
+    if (!btn) throw new Error('„Zeit ändern“ nicht gefunden.');
+    btn.click();
+    for (let k = 0; k < 30 && b.classList.contains('opened'); k++) await sleep(50);
+    if (b.classList.contains('opened')) throw new Error('Der Dialog ließ sich nicht schließen.');
+  }
+  // neuen Eintrag in der Zeile einer Aufgabe anlegen: Vorschau „Neu…“ an einer freien Stelle auslösen und anklicken
+  async function createEntry(table, key) {
+    const [z, id] = key.split('|');
+    const td = table.querySelector(`td.stunden[data-zugehoerigkeit="${z}"][data-zugehoerigkeitid="${id}"]`);
+    if (!td) throw new Error('Zeile der Aufgabe nicht gefunden.');
+    const taken = union([...td.querySelectorAll('a.termin')]
+      .filter((a) => !a.closest('div.neu'))
+      .map((a) => ({ from: parseInt(a.dataset.left, 10), to: parseInt(a.dataset.right, 10) }))
+      .filter((i) => !isNaN(i.from) && !isNaN(i.to)));
+    const free = subtract([{ from: 0, to: 1440 }], taken).sort((a, b) => (b.to - b.from) - (a.to - a.from));
+    const before = new Set(document.querySelectorAll('.bubble.workinghours__dialog.opened'));
+    for (const f of free.slice(0, 3)) {
+      const r = td.getBoundingClientRect();
+      const x = r.left + r.width * ((f.from + f.to) / 2) / 1440, y = r.top + r.height / 2;
+      ['mouseover', 'mouseenter', 'mousemove'].forEach((t) => td.dispatchEvent(new MouseEvent(t, { bubbles: true, clientX: x, clientY: y })));
+      await sleep(80);
+      const a = td.querySelector('div.neu > a');
+      if (!a) continue;
+      a.click();
+      for (let k = 0; k < 30; k++) {
+        await sleep(50);
+        const b = [...document.querySelectorAll('.bubble.workinghours__dialog.opened')].find((x) => !before.has(x));
+        if (b && bubbleKey(b) === key) return b;
+      }
+    }
+    throw new Error('Neuer Eintrag ließ sich nicht anlegen.');
+  }
+
+  async function runSplit(panel, bubble, table) {
+    const plan = splitPlan(panel, bubble, table);
+    if (plan.error || !plan.parts || splitBusy) return;
+    const { parts, targets } = plan;
+    const st = panel.__cbp;
+    st.busy = true;
+    splitBusy = true;
+    const extra = {
+      datumVon: (bubble.querySelector('input.datum.von') || {}).value,
+      datumBis: (bubble.querySelector('input.datum.bis') || {}).value,
+      taet: (bubble.querySelector('input.taetigkeit') || {}).value || '',
+      kat: (bubble.querySelector('select.kategorie') || {}).value,
+    };
+    const ownKey = bubbleKey(bubble);
+    store.set('split-last', targets);
+    try {
+      toast('Teile auf …');
+      panel.remove();
+      await fillBubble(bubble, parts[0], null);
+      await closeBubble(bubble);
+      for (let i = 1; i < parts.length; i++) {
+        toast(`Lege Teil ${i + 1} von ${parts.length} an …`);
+        const nb = await createEntry(table, targets[i - 1]);
+        await fillBubble(nb, parts[i], extra);
+        await closeBubble(nb);
+      }
+      // prüfen, ob alle Teile so im Raster stehen
+      const g = readGrid(table);
+      const keys = [ownKey, ...targets];
+      const missing = parts.findIndex((p, i) => !g.bars.some((b) => !b.fz && rowKey(b.a.closest('td')) === keys[i] && b.from === p.from && b.to === p.to));
+      if (missing >= 0) throw new Error(`Teil ${missing + 1} steht nicht wie geplant im Raster.`);
+      toast(`Aufgeteilt auf ${parts.length} Aufgaben. Bitte prüfen und speichern.`, 'ok');
+    } catch (err) {
+      toast(`Aufteilen abgebrochen: ${err.message} Nichts gespeichert – „Abbrechen“ oder Neuladen verwirft die Änderungen.`, 'err');
+    } finally {
+      splitBusy = false;
+      schedule();
     }
   }
 
@@ -602,7 +951,7 @@
     const t = e.target;
     if (!t || !t.closest) return;
     const a = t.closest('.workinghours__content table div.neu > a');
-    if (!a) return;
+    if (!a || splitBusy) return; // beim Aufteilen setzt die Erweiterung die Kategorie selbst
     const td = a.closest('td.stunden');
     pendingNew = {
       until: Date.now() + 5000,
@@ -1083,6 +1432,7 @@
           if (table.closest('form') && table.closest('form').contains(b)) renderSnap(b, table, g);
         });
       });
+      resumeSplit();
       document.querySelectorAll('#fremdidauswahl-content').forEach(enhancePicker);
       ensureTaetigkeit();
       ensureKategorie();
@@ -1096,7 +1446,7 @@
 
   const obs = new MutationObserver((muts) => {
     // eigene Änderungen ignorieren
-    if (muts.every((m) => m.target.closest && m.target.closest('.cbp-summary, .cbp-snap, .cbp-search, .cbp-today'))) return;
+    if (muts.every((m) => m.target.closest && m.target.closest('.cbp-summary, .cbp-snap, .cbp-split, .cbp-search, .cbp-today, .cbp-toast'))) return;
     schedule();
   });
   obs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style', 'data-theme'] });
